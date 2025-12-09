@@ -1,65 +1,101 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CustomerMapping, CreateCustomerMappingDto, UpdateCustomerMappingDto } from '../types/customer-mapping';
-import 'dotenv/config';
-import odbc from 'odbc'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Mock data - replace with your actual API calls
-const mockData: CustomerMapping[] = [
-  { rowNum: 1, billto: 'SL001', shipto: null, hq: 'HQ001', ssacct: 'SA12345' },
-  { rowNum: 2, billto: 'SL002', shipto: 'ST001', hq: 'HQ002', ssacct: 'SA12346' },
-  { rowNum: 3, billto: 'SL003', shipto: null, hq: 'HQ001', ssacct: 'SA12347' },
-  { rowNum: 4, billto: 'SL004', shipto: 'ST002', hq: 'HQ003', ssacct: 'SA12348' },
-  { rowNum: 5, billto: 'SL005', shipto: null, hq: 'HQ002', ssacct: 'SA12349' },
-];
-
-
-
-const SSMS_CONN_STRING = process.env.SSMS_CONN_STRING!;
-
-if (!SSMS_CONN_STRING){
-  throw new Error("SSMS Conn String Required")
-}
-
-const checkTime = () => {
-  //if time is between 6 - 8 am no changes allowed
-  const now = new Date();
-  const hours = now.getHours();
-  if (hours >= 6 && hours <= 8) {
-    return true;
-  }
-  return false;
-};
-
-
-const getCustomerMappings = () => {
+// ============ GET ALL MAPPINGS ============
+const useGetCustomerMappings = () => {
   return useQuery({
     queryKey: ['mappings'],
-    queryFn: async () =>{
-
-      let conn: odbc.Connection | undefined;  
-
-      try {
-        conn =  await odbc.connect(SSMS_CONN_STRING);
-        const query = (
-          `
-          SELECT 
-            Billto,
-            Shipto,
-            HQ as HQ_NUMBER,
-            Ssacct as SAGE_ACCOUNT_NUMBER,
-            NAMECUST 
-          FROM 
-            IPS.dbo.crossref as c LEFT JOIN TUTLIV.dbo.ARCUS as a on c.Ssacct = a.IDCUST 
-          `)
-        const result = await conn.query(query)
-      }catch(err){
-        console.error(`error fetching mapping from db ${err}`)
-      }finally{
-        if (conn){
-          await conn.close()
-        }
-      };
+    queryFn: async (): Promise<CustomerMapping[]> => {
+      const response = await fetch(`${API_BASE}/api/mappings`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch customer mappings');
+      }
+      
+      return response.json();
     }
-  })
-}
+  });
+};
+
+// ============ CREATE MAPPING ============
+const useCreateCustomerMapping = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateCustomerMappingDto) => {
+      const response = await fetch(`${API_BASE}/api/mappings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create customer mapping');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mappings'] });
+    }
+  });
+};
+
+// ============ UPDATE MAPPING ============
+const useUpdateCustomerMapping = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ rowNum, data }: { rowNum: number; data: UpdateCustomerMappingDto }) => {
+      const response = await fetch(`${API_BASE}/api/mappings/${rowNum}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update customer mapping');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mappings'] });
+    }
+  });
+};
+
+// ============ DELETE MAPPING ============
+const useDeleteCustomerMapping = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (rowNum: number) => {
+      const response = await fetch(`${API_BASE}/api/mappings/${rowNum}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete customer mapping');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mappings'] });
+    }
+  });
+};
+
+export {
+  useGetCustomerMappings,
+  useCreateCustomerMapping,
+  useUpdateCustomerMapping,
+  useDeleteCustomerMapping
+};

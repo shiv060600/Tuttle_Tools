@@ -1,8 +1,8 @@
-import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CustomerMappingTable } from './components/CustomerMappingTable';
-import { Toaster } from 'sonner@2.0.3';
-import tuttleLogo from 'figma:asset/de641beac450d0641282ac56ffbe3ffc89a2c2c9.png';
+import { Toaster } from 'sonner';
+import tuttleLogo from './assets/tuttlejpeg.jpg';
+
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -4,6 +4,7 @@ export interface CustomerMapping {
   shipto: string | null;
   hq: string;
   ssacct: string;
+  nameCust: string | null;
 }
 
 export interface CreateCustomerMappingDto {

@@ -57,5 +57,7 @@
     server: {
       port: 3000,
       open: true,
+      host: true,
+      allowedHosts: ['tutpub2.tuttlepub.com', 'localhost'],
     },
   });

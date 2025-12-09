@@ -1,16 +1,55 @@
-import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search, Loader2 } from 'lucide-react';
-import { useCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
+import { useState, useMemo, useCallback } from 'react';
+import { Plus, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useGetCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
 import { CustomerMapping } from '../types/customer-mapping';
 import { CustomerMappingForm } from './CustomerMappingForm';
 
+// Debounce hook for search inputs
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useMemo(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+interface ColumnFilters {
+  billto: string;
+  shipto: string;
+  hq: string;
+  ssacct: string;
+  nameCust: string;
+}
+
+const emptyFilters: ColumnFilters = {
+  billto: '',
+  shipto: '',
+  hq: '',
+  ssacct: '',
+  nameCust: '',
+};
+
+const ROWS_PER_PAGE = 50;
+
 export function CustomerMappingTable() {
-  const { data: mappings, isLoading, error } = useCustomerMappings();
+  const { data: mappings, isLoading, error } = useGetCustomerMappings();
   const deleteMutation = useDeleteCustomerMapping();
   
-  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<ColumnFilters>(emptyFilters);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMapping, setEditingMapping] = useState<CustomerMapping | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Debounce filters - only filter after user stops typing for 250ms
+  const debouncedFilters = useDebounce(filters, 250);
 
   const handleEdit = (mapping: CustomerMapping) => {
     setEditingMapping(mapping);
@@ -28,15 +67,42 @@ export function CustomerMappingTable() {
     setEditingMapping(null);
   };
 
-  const filteredMappings = mappings?.filter(mapping => {
-    const search = searchTerm.toLowerCase();
-    return (
-      mapping.billto.toLowerCase().includes(search) ||
-      mapping.hq.toLowerCase().includes(search) ||
-      mapping.ssacct.toLowerCase().includes(search) ||
-      (mapping.shipto && mapping.shipto.toLowerCase().includes(search))
-    );
-  });
+  const handleFilterChange = useCallback((field: keyof ColumnFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+    setCurrentPage(1); // Reset to first page on filter change
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters(emptyFilters);
+    setCurrentPage(1);
+  }, []);
+
+  const hasActiveFilters = Object.values(filters).some(f => f !== '');
+
+  // Memoized filtering
+  const filteredMappings = useMemo(() => {
+    if (!mappings) return [];
+    
+    return mappings.filter(mapping => {
+      const billtoMatch = !debouncedFilters.billto || 
+        mapping.billto.toLowerCase().includes(debouncedFilters.billto.toLowerCase());
+      const shiptoMatch = !debouncedFilters.shipto || 
+        (mapping.shipto && mapping.shipto.toLowerCase().includes(debouncedFilters.shipto.toLowerCase()));
+      const hqMatch = !debouncedFilters.hq || 
+        mapping.hq.toLowerCase().includes(debouncedFilters.hq.toLowerCase());
+      const ssacctMatch = !debouncedFilters.ssacct || 
+        mapping.ssacct.toLowerCase().includes(debouncedFilters.ssacct.toLowerCase());
+      const nameCustMatch = !debouncedFilters.nameCust || 
+        (mapping.nameCust && mapping.nameCust.toLowerCase().includes(debouncedFilters.nameCust.toLowerCase()));
+
+      return billtoMatch && shiptoMatch && hqMatch && ssacctMatch && nameCustMatch;
+    });
+  }, [mappings, debouncedFilters]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredMappings.length / ROWS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  const paginatedMappings = filteredMappings.slice(startIndex, startIndex + ROWS_PER_PAGE);
 
   if (error) {
     return (
@@ -47,78 +113,140 @@ export function CustomerMappingTable() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by Bill To, Ship To, HQ, or Sage Account..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex items-center gap-3">
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+            >
+              <X className="size-4" />
+              Clear Filters
+            </button>
+          )}
+          {mappings && (
+            <span className="text-sm text-gray-500">
+              Showing {paginatedMappings.length} of {filteredMappings.length} 
+              {filteredMappings.length !== mappings.length && ` (${mappings.length} total)`}
+            </span>
+          )}
         </div>
         <button
           onClick={() => setIsFormOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="size-5" />
-          Add Customer Mapping
+          Add Mapping
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left text-gray-700">Row #</th>
-                <th className="px-6 py-3 text-left text-gray-700">Bill To (SL Number)</th>
-                <th className="px-6 py-3 text-left text-gray-700">Ship To</th>
-                <th className="px-6 py-3 text-left text-gray-700">HQ Number</th>
-                <th className="px-6 py-3 text-left text-gray-700">Sage Account Number</th>
-                <th className="px-6 py-3 text-right text-gray-700">Actions</th>
+              {/* Column Headers */}
+              <tr className="bg-gray-100 border-b border-gray-200">
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase w-16">Row</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Bill To</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Ship To</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">HQ</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Sage Acct</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
+                <th className="px-3 py-2 w-20"></th>
+              </tr>
+              {/* Filter Row - Always visible */}
+              <tr className="bg-gray-50 border-b-2 border-gray-200">
+                <td className="px-3 py-1.5"></td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={filters.billto}
+                    onChange={(e) => handleFilterChange('billto', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={filters.shipto}
+                    onChange={(e) => handleFilterChange('shipto', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={filters.hq}
+                    onChange={(e) => handleFilterChange('hq', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={filters.ssacct}
+                    onChange={(e) => handleFilterChange('ssacct', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={filters.nameCust}
+                    onChange={(e) => handleFilterChange('nameCust', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                  />
+                </td>
+                <td className="px-3 py-1.5"></td>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex items-center justify-center gap-2 text-gray-500">
                       <Loader2 className="size-5 animate-spin" />
-                      Loading customer mappings...
+                      Loading...
                     </div>
                   </td>
                 </tr>
-              ) : filteredMappings && filteredMappings.length > 0 ? (
-                filteredMappings.map((mapping) => (
-                  <tr key={mapping.rowNum} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-gray-500">{mapping.rowNum}</td>
-                    <td className="px-6 py-4 text-gray-900">{mapping.billto}</td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {mapping.shipto || <span className="text-gray-400 italic">null</span>}
+              ) : paginatedMappings.length > 0 ? (
+                paginatedMappings.map((mapping) => (
+                  <tr key={mapping.rowNum} className="border-b border-gray-100 hover:bg-blue-50/50">
+                    <td className="px-3 py-2 text-sm text-gray-400 font-mono">{mapping.rowNum}</td>
+                    <td className="px-3 py-2 text-sm text-gray-900 font-medium">{mapping.billto}</td>
+                    <td className="px-3 py-2 text-sm text-gray-600">
+                      {mapping.shipto || <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-6 py-4 text-gray-900">{mapping.hq}</td>
-                    <td className="px-6 py-4 text-gray-900">{mapping.ssacct}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-3 py-2 text-sm text-gray-900">{mapping.hq}</td>
+                    <td className="px-3 py-2 text-sm text-gray-900 font-mono">{mapping.ssacct}</td>
+                    <td className="px-3 py-2 text-sm text-gray-600 truncate max-w-[200px]" title={mapping.nameCust || ''}>
+                      {mapping.nameCust || <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-0.5">
                         <button
                           onClick={() => handleEdit(mapping)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded"
                           title="Edit"
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(mapping.rowNum)}
                           disabled={deleteMutation.isPending}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                          className="p-1 text-red-600 hover:bg-red-100 rounded disabled:opacity-50"
                           title="Delete"
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5" />
                         </button>
                       </div>
                     </td>
@@ -126,14 +254,52 @@ export function CustomerMappingTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    {searchTerm ? 'No customer mappings found matching your search.' : 'No customer mappings yet. Add one to get started.'}
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                    {hasActiveFilters ? 'No matches found.' : 'No data.'}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="size-4" />
+              Prev
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+                className="px-2 py-1 text-sm border border-gray-300 rounded"
+              >
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Form Modal */}
