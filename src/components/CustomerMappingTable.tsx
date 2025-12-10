@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGetCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
 import { CustomerMapping } from '../types/customer-mapping';
@@ -8,7 +8,7 @@ import { CustomerMappingForm } from './CustomerMappingForm';
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  useMemo(() => {
+  useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
