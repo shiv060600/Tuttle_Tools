@@ -7,6 +7,7 @@ dotenv.config({ path: String.raw`H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\.env.
 
 // Import routes
 import mappingsRoutes from './routes/mappings';
+import loggingRoutes  from './routes/logger';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Mount routes
 app.use('/api/mappings', mappingsRoutes);
+app.use('api/logging',loggingRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response): void => {
