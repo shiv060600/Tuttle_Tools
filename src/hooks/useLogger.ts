@@ -28,11 +28,11 @@ const useDeleteLogging = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async(days: Number) => {
-            if(typeof rowNum != 'number'){
+            if(typeof days != 'number'){
                 throw new Error('rowNum must be number')
             };
 
-            const response = await fetch(`${API_BASE}/api/logging/${rowNum}`,{method:'DELETE'});
+            const response = await fetch(`${API_BASE}/api/logging/${days}`,{method:'DELETE'});
 
             if(!response.ok){
                 const err = await response.json();
