@@ -1,10 +1,10 @@
-import { Request,Response } from "express";
+import { Request,Response, Router } from "express";
 import { getConnection } from "../config/db";
 import odbc, { Connection } from "odbc";
 import { CreateLoggingBody, LogDeleteResponse } from "../types";
 
 const express = require('express');
-const router = express.Router();
+const router: Router = express.Router();
 
 
 //logs router prefix : /logging
@@ -107,8 +107,28 @@ router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) 
 
                 await conn.query(query, params);
                 return res.status(200).json({ updated: 1 });
-            }
+                }
+            case 'instert':
+                const query = (
+                    `
+                    INSERT INTO IPS.dbo.TuttleMappingLogger
+                        (ACTION,BILLTO_FROM,SHIPTO_FROM,HQ_FROM,SSACCT_FROM,BILLTO_TO,SHIPTO_TO,HQ_TO,SSACCT_TO,ACTION_TIMESTAMP,ROWNUM),
+                    VALUES ('insert',?,?,?,?,?,?,?,?)
+                    `
+                );
 
+                const params = [
+                    req.body.billto_from!,
+                    req.body.shipto_from!,
+                    req.body.HQ_from!,
+                    req.body.Ssacct_from!,
+                    req.body.billto_to!,
+                    req.body.shipto_to!,
+                    req.body.HQ_to!,
+                    req.body.Ssacct_to!,
+                    req.body.ACTION_TIMESTAMP!,
+                    null,
+                ];
             default:
                 console.error(`Unhandled action: ${req.body.action}`);
                 return res.status(400).json({ error: 'Unhandled action' });
@@ -122,3 +142,5 @@ router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) 
         }
     }
 });
+
+export default router;
