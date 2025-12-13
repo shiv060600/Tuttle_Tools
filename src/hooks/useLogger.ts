@@ -84,17 +84,10 @@ const useDeleteLogItem = () => {
     });
 };
 
-const useUpdateLogging = () => {
+const useCreateLog = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async(payload: LoggingBody) => {
-            if (payload.action !== 'edit') {
-                throw new Error("action must be 'edit' for update");
-            }
-            if (payload.rowNum === null || payload.rowNum === undefined || Number.isNaN(Number(payload.rowNum))) {
-                throw new Error('rowNum is required for update');
-            }
-
             const response = await fetch(`${API_BASE}/api/logging`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -103,7 +96,7 @@ const useUpdateLogging = () => {
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error(err.error || 'failed to update log entry');
+                throw new Error(err.error || 'failed to create log entry');
             }
 
             return response.json();
@@ -119,9 +112,10 @@ const useUpdateLogging = () => {
 
 
 
+
 export {
     useLogging,
     useDeleteOldLogs,
     useDeleteLogItem,
-    useUpdateLogging
+    useCreateLog
 }

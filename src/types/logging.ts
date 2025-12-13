@@ -1,4 +1,4 @@
-export type ActionType = 'instert' | 'edit';
+export type ActionType = 'insert' | 'edit';
 
 export interface LoggingBody {
   action: ActionType;

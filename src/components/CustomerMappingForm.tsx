@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { CustomerMapping, CreateCustomerMappingDto } from '../types/customer-mapping';
 import { useCreateCustomerMapping, useUpdateCustomerMapping } from '../hooks/useCustomerMappings';
+import { useCreateLog } from '../hooks/useLogger';
+import { LoggingBody } from '../types/logging';
 
 interface CustomerMappingFormProps {
   mapping?: CustomerMapping | null;
@@ -11,6 +13,7 @@ interface CustomerMappingFormProps {
 export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormProps) {
   const createMutation = useCreateCustomerMapping();
   const updateMutation = useUpdateCustomerMapping();
+  const createLogMutation = useCreateLog();
   
   const [formData, setFormData] = useState<CreateCustomerMappingDto>({
     billto: '',
@@ -35,8 +38,36 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
     
     if (mapping) {
       await updateMutation.mutateAsync({ rowNum: mapping.rowNum, data: formData });
+      const loggerBody: LoggingBody = {
+        action: 'edit',
+        rowNum: mapping.rowNum,
+        billto_from: mapping.billto,
+        shipto_from: mapping.shipto,
+        HQ_from: mapping.hq,
+        Ssacct_from: mapping.ssacct,
+        billto_to: formData.billto,
+        shipto_to: formData.shipto,
+        HQ_to: formData.hq,
+        Ssacct_to: formData.ssacct,
+        ACTION_TIMESTAMP: new Date().toISOString(),
+      };
+      await createLogMutation.mutateAsync(loggerBody);
     } else {
       await createMutation.mutateAsync(formData);
+      const loggerBody: LoggingBody = {
+        action: 'insert',
+        rowNum: null,
+        billto_from: null,
+        shipto_from: null,
+        HQ_from: null,
+        Ssacct_from: null,
+        billto_to: formData.billto,
+        shipto_to: formData.shipto,
+        HQ_to: formData.hq,
+        Ssacct_to: formData.ssacct,
+        ACTION_TIMESTAMP: new Date().toISOString(),
+      };
+      await createLogMutation.mutateAsync(loggerBody);
     }
     
     onClose();
