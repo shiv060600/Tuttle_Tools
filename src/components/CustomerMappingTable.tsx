@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { useGetCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
 import { CustomerMapping } from '../types/customer-mapping';
 import { CustomerMappingForm } from './CustomerMappingForm';
+import { useCreateLog } from '@/hooks/useLogger';
+import { LoggingBody } from '@/types/logging';
 
 // Debounce hook for search inputs
 function useDebounce<T>(value: T, delay: number): T {
@@ -43,6 +45,7 @@ const ROWS_PER_PAGE = 50;
 export function CustomerMappingTable() {
   const { data: mappings, isLoading, error } = useGetCustomerMappings();
   const deleteMutation = useDeleteCustomerMapping();
+  const createLogMutation = useCreateLog();
   
   const [filters, setFilters] = useState<ColumnFilters>(emptyFilters);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -57,11 +60,36 @@ export function CustomerMappingTable() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (rowNum: number) => {
-    if (window.confirm('Are you sure you want to delete this customer mapping?')) {
-      deleteMutation.mutate(rowNum, {
+  const handleDelete = async (mapping: CustomerMapping) => {
+    if (window.confirm(' Are you sure you want to delete this customer mapping?\n\nThis action cannot be undone.')) {
+      const loggerBody: LoggingBody = {
+        action: 'delete',
+        rowNum: mapping.rowNum,
+        billto_from: mapping.billto,
+        shipto_from: mapping.shipto,
+        HQ_from: mapping.hq,
+        Ssacct_from: mapping.ssacct,
+        billto_to: null,
+        shipto_to: null,
+        HQ_to: null,
+        Ssacct_to: null,
+        ACTION_TIMESTAMP: new Date().toISOString()
+      };
+
+      deleteMutation.mutate(mapping.rowNum, {
         onSuccess: () => {
-          toast.success('Mapping deleted successfully!');
+          // Create log entry after successful deletion
+          createLogMutation.mutate(loggerBody, {
+            onSuccess: () => {
+              toast.success('Mapping deleted and logged successfully!');
+            },
+            onError: (err) => {
+              // Still show success for delete, but warn about logging failure
+              toast.warning('Mapping deleted, but logging failed', {
+                description: err instanceof Error ? err.message : 'Failed to create log entry',
+              });
+            }
+          });
         },
         onError: (error) => {
           const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -252,7 +280,7 @@ export function CustomerMappingTable() {
                           <Pencil className="size-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(mapping.rowNum)}
+                          onClick={() => handleDelete(mapping)}
                           disabled={deleteMutation.isPending}
                           className="p-1 text-red-600 hover:bg-red-100 rounded disabled:opacity-50"
                           title="Delete"

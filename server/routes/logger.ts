@@ -167,9 +167,40 @@ router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) 
                 ];
 
                 await conn.query(query, params);
-                console.log('✅ Log entry created (insert)');
+                console.log(' Log entry created (insert)');
                 return res.status(201).json({ inserted: 1 });
             }
+            case 'delete':
+                const query = (
+                    `
+                    INSERT INTO IPS.dbo.TuttleMappingLogger
+                        (ACTION, BILLTO_FROM, SHIPTO_FROM, HQ_FROM, SSACCT_FROM, BILLTO_TO, SHIPTO_TO, HQ_TO, SSACCT_TO, ACTION_TIMESTAMP, ROWNUM)
+                    VALUES ('delete', 
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        GETDATE(), 
+                        NULLIF(CAST(? AS INT), 0))
+                    `);
+                const params: (string | number)[] = [
+                        req.body.billto_from || '',
+                        req.body.shipto_from || '',
+                        req.body.HQ_from || '',
+                        req.body.Ssacct_from || '',
+                        req.body.billto_to || '',
+                        req.body.shipto_to || '',
+                        req.body.HQ_to || '',
+                        req.body.Ssacct_to || '',
+                        req.body.rowNum || 0,
+                    ];
+                await conn.query(query,params);
+                res.status(201).json({inserted: 1})
+
             default:
                 console.error(`Unhandled action: ${req.body.action}`);
                 return res.status(400).json({ error: 'Unhandled action' });
