@@ -35,7 +35,35 @@ router.get('/', async(req: Request<{},{},{}>, res: Response) => {
 
 });
 
-//delete logs for the amount of days
+// delete a specific log by LOG_ID (UUID)
+router.delete('/id/:logId', async (req: Request<{ logId: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
+    let conn: odbc.Connection | null = null;
+    try {
+        conn = await getConnection();
+        const { logId } = req.params;
+        if (!logId) {
+            return res.status(400).json({ deleted_count: 0 });
+        }
+
+        const query = `
+            DELETE FROM IPS.dbo.TuttleMappingLogger
+            WHERE LOG_ID = ?
+        `;
+
+        const result = await conn.query(query, [logId]);
+        const deleted = result.count ?? 0;
+        return res.status(200).json({ deleted_count: deleted });
+    } catch (err) {
+        console.error(`error deleting log by id ${err}`);
+        return res.status(500).json({ deleted_count: 0 });
+    } finally {
+        if (conn) {
+            await conn.close();
+        }
+    }
+});
+
+//delete logs older than the given days
 router.delete('/:days', async (req: Request<{ days: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
     let conn: odbc.Connection | null = null;
     try {
