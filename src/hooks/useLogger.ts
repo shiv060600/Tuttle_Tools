@@ -53,7 +53,7 @@ const useDeleteOldLogs = () => {
                 throw new Error(`failed to delete from logging table ${err.error}`);
             }
 
-            return response
+            return response.json();
         },
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey:['logging']})

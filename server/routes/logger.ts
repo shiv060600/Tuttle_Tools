@@ -95,6 +95,7 @@ router.delete('/:days', async (req: Request<{ days: string }, {}, {}>, res: Resp
 router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) => {
     let conn: odbc.Connection | null = null;
     try {
+        console.log('📝 Creating log entry:', req.body.action);
         conn = await getConnection();
 
         switch (req.body.action) {
@@ -105,58 +106,68 @@ router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) 
                 }
 
                 const query = `
-                    UPDATE IPS.dbo.TuttleMappingLogger
-                    SET 
-                        ACTION = 'edit',
-                        BILLTO_FROM = ?,
-                        SHIPTO_FROM = ?,
-                        HQ_FROM = ?,
-                        SSACCT_FROM = ?,
-                        BILLTO_TO = ?,
-                        SHIPTO_TO = ?,
-                        HQ_TO = ?,
-                        SSACCT_TO = ?,
-                        ACTION_TIMESTAMP = ?
-                    WHERE ROWNUM = ?
+                    INSERT INTO IPS.dbo.TuttleMappingLogger
+                        (ACTION, BILLTO_FROM, SHIPTO_FROM, HQ_FROM, SSACCT_FROM, BILLTO_TO, SHIPTO_TO, HQ_TO, SSACCT_TO, ACTION_TIMESTAMP, ROWNUM)
+                    VALUES ('edit', 
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        GETDATE(), 
+                        CAST(? AS INT))
                 `;
 
-                const params = [
-                    req.body.billto_from!,
-                    req.body.shipto_from!,
-                    req.body.HQ_from!,
-                    req.body.Ssacct_from!,
-                    req.body.billto_to!,
-                    req.body.shipto_to!,
-                    req.body.HQ_to!,
-                    req.body.Ssacct_to!,
-                    req.body.ACTION_TIMESTAMP!,
-                    rowNum!,
+                const params: (string | number)[] = [
+                    req.body.billto_from || '',
+                    req.body.shipto_from || '',
+                    req.body.HQ_from || '',
+                    req.body.Ssacct_from || '',
+                    req.body.billto_to || '',
+                    req.body.shipto_to || '',
+                    req.body.HQ_to || '',
+                    req.body.Ssacct_to || '',
+                    rowNum,
                 ];
 
                 await conn.query(query, params);
+                console.log('✅ Log entry created (edit) for rowNum:', rowNum);
                 return res.status(200).json({ updated: 1 });
                 }
             case 'insert': {
                 const query = `
                     INSERT INTO IPS.dbo.TuttleMappingLogger
                         (ACTION, BILLTO_FROM, SHIPTO_FROM, HQ_FROM, SSACCT_FROM, BILLTO_TO, SHIPTO_TO, HQ_TO, SSACCT_TO, ACTION_TIMESTAMP, ROWNUM)
-                    VALUES ('insert', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('insert', 
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        NULLIF(CAST(? AS VARCHAR(50)), ''),
+                        GETDATE(), 
+                        NULLIF(CAST(? AS INT), 0))
                 `;
 
-                const params = [
-                    req.body.billto_from ?? null,
-                    req.body.shipto_from ?? null,
-                    req.body.HQ_from ?? null,
-                    req.body.Ssacct_from ?? null,
-                    req.body.billto_to ?? null,
-                    req.body.shipto_to ?? null,
-                    req.body.HQ_to ?? null,
-                    req.body.Ssacct_to ?? null,
-                    req.body.ACTION_TIMESTAMP,
-                    req.body.rowNum ?? null,
+                const params: (string | number)[] = [
+                    req.body.billto_from || '',
+                    req.body.shipto_from || '',
+                    req.body.HQ_from || '',
+                    req.body.Ssacct_from || '',
+                    req.body.billto_to || '',
+                    req.body.shipto_to || '',
+                    req.body.HQ_to || '',
+                    req.body.Ssacct_to || '',
+                    req.body.rowNum || 0,
                 ];
 
                 await conn.query(query, params);
+                console.log('✅ Log entry created (insert)');
                 return res.status(201).json({ inserted: 1 });
             }
             default:

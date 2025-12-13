@@ -16,9 +16,16 @@ const PORT: number = parseInt(process.env.PORT || '3001', 10);
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Mount routes
 app.use('/api/mappings', mappingsRoutes);
-app.use('api/logging',loggingRoutes);
+app.use('/api/logging', loggingRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response): void => {
@@ -38,16 +45,22 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
 
 // Start server
 app.listen(PORT, (): void => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`API endpoints:`);
-  console.log(`  GET    /api/mappings`);
-  console.log(`  POST   /api/mappings`);
-  console.log(`  PUT    /api/mappings/:rowNum`);
-  console.log(`  DELETE /api/mappings/:rowNum`);
-  console.log(`  POST   /api/logs`);
-  console.log(`  GET    /api/logs`);
-  console.log(`  DELETE /api/logs/cleanup/:days`);
-  console.log(`  DELETE /api/logs/before/:isoDate`);
-  console.log(`  GET    /api/health`);
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`${'='.repeat(50)}`);
+  console.log(`\n📋 Available API Endpoints:\n`);
+  console.log(`  Mappings:`);
+  console.log(`    GET    /api/mappings          - Get all mappings`);
+  console.log(`    POST   /api/mappings          - Create mapping`);
+  console.log(`    PUT    /api/mappings/:rowNum  - Update mapping`);
+  console.log(`    DELETE /api/mappings/:rowNum  - Delete mapping\n`);
+  console.log(`  Logging:`);
+  console.log(`    GET    /api/logging           - Get all logs`);
+  console.log(`    POST   /api/logging           - Create log entry`);
+  console.log(`    DELETE /api/logging/:days     - Delete logs older than X days`);
+  console.log(`    DELETE /api/logging/id/:logId - Delete specific log\n`);
+  console.log(`  Health:`);
+  console.log(`    GET    /api/health            - Health check\n`);
+  console.log(`${'='.repeat(50)}\n`);
 });
 

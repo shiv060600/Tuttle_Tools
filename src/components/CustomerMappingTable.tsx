@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { useGetCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
 import { CustomerMapping } from '../types/customer-mapping';
 import { CustomerMappingForm } from './CustomerMappingForm';
@@ -58,7 +59,17 @@ export function CustomerMappingTable() {
 
   const handleDelete = async (rowNum: number) => {
     if (window.confirm('Are you sure you want to delete this customer mapping?')) {
-      deleteMutation.mutate(rowNum);
+      deleteMutation.mutate(rowNum, {
+        onSuccess: () => {
+          toast.success('Mapping deleted successfully!');
+        },
+        onError: (error) => {
+          const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+          toast.error('Failed to delete mapping', {
+            description: errorMessage,
+          });
+        },
+      });
     }
   };
 
@@ -143,9 +154,9 @@ export function CustomerMappingTable() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm min-h-[500px] flex flex-col">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full h-full">
             <thead>
               {/* Column Headers */}
               <tr className="bg-gray-100 border-b border-gray-200">
@@ -208,10 +219,10 @@ export function CustomerMappingTable() {
                 <td className="px-3 py-1.5"></td>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="relative">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="flex items-center justify-center gap-2 text-gray-500">
                       <Loader2 className="size-5 animate-spin" />
                       Loading...
@@ -254,7 +265,7 @@ export function CustomerMappingTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-20 text-center text-gray-500">
                     {hasActiveFilters ? 'No matches found.' : 'No data.'}
                   </td>
                 </tr>

@@ -29,3 +29,7 @@ export interface LogEntry {
   ssacctTo?: string | null;
   actionTimestamp: string;
 }
+
+export interface LogDeleteResponse {
+  deleted_count: number;
+}

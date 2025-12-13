@@ -55,6 +55,7 @@ router.post(
         `INSERT INTO IPS.dbo.crossref (Billto, Shipto, HQ, Ssacct) VALUES (?, ?, ?, ?)`,
         [billto, shipto ?? '', hq, ssacct]
       ));
+      console.log('✅ Mapping created - BillTo:', billto, 'HQ:', hq);
       res.json({ inserted: (result as any).count });
     } catch (err) {
       console.error('Error creating mapping:', err);
@@ -118,6 +119,7 @@ router.put(
         return;
       }
 
+      console.log('✅ Mapping updated - RowNum:', rowNum);
       res.json({ updated: (result as any).count });
     } catch (err) {
       console.error('Error updating mapping:', err);
@@ -152,6 +154,7 @@ router.delete(
         return;
       }
 
+      console.log('✅ Mapping deleted - RowNum:', rowNum);
       res.json({ deleted: (result as any).count });
     } catch (err) {
       console.error('Error deleting mapping:', err);

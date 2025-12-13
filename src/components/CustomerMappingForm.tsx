@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { CustomerMapping, CreateCustomerMappingDto } from '../types/customer-mapping';
 import { useCreateCustomerMapping, useUpdateCustomerMapping } from '../hooks/useCustomerMappings';
 import { useCreateLog } from '../hooks/useLogger';
@@ -36,41 +37,61 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (mapping) {
-      await updateMutation.mutateAsync({ rowNum: mapping.rowNum, data: formData });
-      const loggerBody: LoggingBody = {
-        action: 'edit',
-        rowNum: mapping.rowNum,
-        billto_from: mapping.billto,
-        shipto_from: mapping.shipto,
-        HQ_from: mapping.hq,
-        Ssacct_from: mapping.ssacct,
-        billto_to: formData.billto,
-        shipto_to: formData.shipto,
-        HQ_to: formData.hq,
-        Ssacct_to: formData.ssacct,
-        ACTION_TIMESTAMP: new Date().toISOString(),
-      };
-      await createLogMutation.mutateAsync(loggerBody);
-    } else {
-      await createMutation.mutateAsync(formData);
-      const loggerBody: LoggingBody = {
-        action: 'insert',
-        rowNum: null,
-        billto_from: null,
-        shipto_from: null,
-        HQ_from: null,
-        Ssacct_from: null,
-        billto_to: formData.billto,
-        shipto_to: formData.shipto,
-        HQ_to: formData.hq,
-        Ssacct_to: formData.ssacct,
-        ACTION_TIMESTAMP: new Date().toISOString(),
-      };
-      await createLogMutation.mutateAsync(loggerBody);
+    try {
+      if (mapping) {
+        // Update existing mapping
+        await updateMutation.mutateAsync({ rowNum: mapping.rowNum, data: formData });
+        
+        // Log the edit
+        const loggerBody: LoggingBody = {
+          action: 'edit',
+          rowNum: mapping.rowNum,
+          billto_from: mapping.billto,
+          shipto_from: mapping.shipto,
+          HQ_from: mapping.hq,
+          Ssacct_from: mapping.ssacct,
+          billto_to: formData.billto,
+          shipto_to: formData.shipto,
+          HQ_to: formData.hq,
+          Ssacct_to: formData.ssacct,
+          ACTION_TIMESTAMP: new Date().toISOString(),
+        };
+        await createLogMutation.mutateAsync(loggerBody);
+        
+        toast.success('Mapping updated successfully!');
+      } else {
+        // Create new mapping
+        await createMutation.mutateAsync(formData);
+        
+        // Log the insert
+        const loggerBody: LoggingBody = {
+          action: 'insert',
+          rowNum: null,
+          billto_from: null,
+          shipto_from: null,
+          HQ_from: null,
+          Ssacct_from: null,
+          billto_to: formData.billto,
+          shipto_to: formData.shipto,
+          HQ_to: formData.hq,
+          Ssacct_to: formData.ssacct,
+          ACTION_TIMESTAMP: new Date().toISOString(),
+        };
+        await createLogMutation.mutateAsync(loggerBody);
+        
+        toast.success('Mapping created successfully!');
+      }
+      
+      // Only close the form if everything succeeded
+      onClose();
+    } catch (error) {
+      // Show error toast
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      toast.error(mapping ? 'Failed to update mapping' : 'Failed to create mapping', {
+        description: errorMessage,
+      });
+      console.error('Form submission error:', error);
     }
-    
-    onClose();
   };
 
   const handleChange = (field: keyof CreateCustomerMappingDto, value: string) => {

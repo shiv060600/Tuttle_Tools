@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Trash2, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useLogging, useDeleteLogItem, useDeleteOldLogs } from '../hooks/useLogger';
-import { LogEntry } from '../types/logging';
+import { LogEntry, LogDeleteResponse } from '../types/logging';
 
 // simple debounce hook reused for filters
 function useDebounce<T>(value: T, delay: number): T {
@@ -47,7 +48,7 @@ const formatTs = (ts: string) => {
 };
 
 export function LoggingTable() {
-  const { data: logs, isLoading, error } = useLogging();
+  const { data: logs, isLoading } = useLogging();
   const deleteItem = useDeleteLogItem();
   const clearOld = useDeleteOldLogs();
 
@@ -91,14 +92,49 @@ export function LoggingTable() {
     const target = log.logId ?? '';
     if (!target) return;
     if (window.confirm('Delete this log entry?')) {
-      deleteItem.mutate(target);
+      deleteItem.mutate(target, {
+        onSuccess: () => {
+          toast.success('Log entry deleted successfully!');
+        },
+        onError: (error) => {
+          const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+          toast.error('Failed to delete log entry', {
+            description: errorMessage,
+          });
+        },
+      });
     }
   };
 
   const handleClearOld = () => {
-    if (!clearDays || clearDays <= 0) return;
-    if (window.confirm(`Delete logs older than ${clearDays} days?`)) {
-      clearOld.mutate(clearDays);
+    if (!clearDays || clearDays <= 0) {
+      toast.error('Invalid number of days', {
+        description: 'Please enter a number greater than 0',
+      });
+      return;
+    }
+    
+    if (window.confirm(`⚠️ Are you sure you want to delete all logs older than ${clearDays} days?\n\nThis action cannot be undone.`)) {
+      clearOld.mutate(clearDays, {
+        onSuccess: (data: LogDeleteResponse) => {
+          const count = data.deleted_count ?? 0;
+          if (count > 0) {
+            toast.success(`Cleanup complete!`, {
+              description: `Successfully deleted ${count} log ${count === 1 ? 'entry' : 'entries'}`,
+            });
+          } else {
+            toast.info('No old logs found', {
+              description: `No logs older than ${clearDays} days were found`,
+            });
+          }
+        },
+        onError: (error) => {
+          const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+          toast.error('Failed to delete old logs', {
+            description: errorMessage,
+          });
+        },
+      });
     }
   };
 
@@ -122,28 +158,33 @@ export function LoggingTable() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+          <label htmlFor="clearDays" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            Delete logs older than:
+          </label>
           <input
+            id="clearDays"
             type="number"
             min={1}
             value={clearDays}
             onChange={(e) => setClearDays(Number(e.target.value))}
-            className="w-28 px-2 py-1.5 text-sm border border-gray-300 rounded"
-            placeholder="Days"
+            className="w-16 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="30"
           />
+          <span className="text-sm text-gray-600">days</span>
           <button
             onClick={handleClearOld}
             disabled={clearOld.isPending}
-            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            className="px-3 py-1.5 text-sm bg-red-600 text-black rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
           >
-            {clearOld.isPending ? 'Clearing...' : 'Clear older than'}
+            {clearOld.isPending ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm min-h-[500px] flex flex-col">
+        <div className="overflow-x-auto flex-1">
+          <table className="min-w-full h-full">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-200">
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Timestamp</th>
@@ -242,7 +283,7 @@ export function LoggingTable() {
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
                   />
                 </td>
-                <td className="px-3 py-1.5"></td>
+                <td className="px-3 py-1.5">
                   <input
                     type="text"
                     value={filters.ssacctTo}
@@ -254,13 +295,10 @@ export function LoggingTable() {
                 <td className="px-3 py-1.5"></td>
               </tr>
             </thead>
-*** End Patch
-              </tr>
-            </thead>
-            <tbody>
+            <tbody className="relative">
               {isLoading ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={12} className="px-6 py-20 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="size-5 animate-spin" />
                       Loading logs...
@@ -295,7 +333,7 @@ export function LoggingTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={12} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={12} className="px-6 py-20 text-center text-gray-500">
                     {hasActiveFilters ? 'No matches found.' : 'No logs yet.'}
                   </td>
                 </tr>

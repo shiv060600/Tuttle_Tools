@@ -1,0 +1,16 @@
+
+> Customer Management Interface@0.1.0 server
+> ts-node --project tsconfig.server.json server/index.ts
+
+[dotenv@17.2.3] injecting env (1) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+Server running on http://localhost:3001
+API endpoints:
+  GET    /api/mappings
+  POST   /api/mappings
+  PUT    /api/mappings/:rowNum
+  DELETE /api/mappings/:rowNum
+  POST   /api/logs
+  GET    /api/logs
+  DELETE /api/logs/cleanup/:days
+  DELETE /api/logs/before/:isoDate
+  GET    /api/health

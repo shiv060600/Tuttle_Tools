@@ -16,10 +16,6 @@ export interface CreateMappingBody {
   ssacct: string;
 }
 
-export interface LogDeleteResponse{
-  deleted_count: Number;
-}
-
 export interface UpdateMappingBody {
   billto?: string;
   shipto?: string;
@@ -44,20 +40,22 @@ export interface CountResponse {
   inserted?: number;
   updated?: number;
   deleted?: number;
-};
-
-type ActionType = 'insert' | 'edit';
-export interface CreateLoggingBody{
-  action: ActionType;
-  rowNum?: number | null;
-  billto_from?: string | null;
-  shipto_from?: string | null;
-  HQ_from?: string | null;
-  Ssacct_from?: string | null;
-  billto_to?: string | null;
-  shipto_to?: string | null;
-  HQ_to?: string | null;
-  Ssacct_to?: string | null;
-  ACTION_TIMESTAMP: string;
 }
 
+export interface LogDeleteResponse {
+    deleted_count?: number;
+}
+
+export interface CreateLoggingBody {
+    action: 'edit' | 'insert';
+    rowNum?: number;
+    billto_from?: string;
+    shipto_from?: string;
+    HQ_from?: string;
+    Ssacct_from?: string;
+    billto_to?: string;
+    shipto_to?: string;
+    HQ_to?: string;
+    Ssacct_to?: string;
+    ACTION_TIMESTAMP?: string;
+}
