@@ -169,12 +169,23 @@ echo Frontend: http://localhost:3000
 
 The backend exposes these REST endpoints:
 
+### Customer Mappings
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/mappings` | Get all customer mappings |
 | `POST` | `/api/mappings` | Create a new mapping |
 | `PUT` | `/api/mappings/:rowNum` | Update a mapping by row number |
 | `DELETE` | `/api/mappings/:rowNum` | Delete a mapping by row number |
+
+### Activity Logging
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/logging` | Get all log entries |
+| `POST` | `/api/logging` | Log an action (insert/edit) |
+| `DELETE` | `/api/logging/id/:logId` | Delete a specific log entry |
+| `DELETE` | `/api/logging/:days` | Delete logs older than N days |
 
 ### Time Restriction
 
@@ -187,6 +198,7 @@ The backend exposes these REST endpoints:
 The application queries:
 
 - `IPS.dbo.crossref` - Main customer mapping table
+- `IPS.dbo.TuttleMappingLogger` - Activity log (insert/edit actions)
 - `TUTLIV.dbo.ARCUS` - Sage customer master (for customer names)
 
 ### Crossref Table Columns
@@ -198,6 +210,23 @@ The application queries:
 | `Shipto` | SL Ship-To number (nullable) |
 | `HQ` | HQ Number |
 | `Ssacct` | Sage Account Number |
+
+### TuttleMappingLogger Table Columns
+
+| Column | Description |
+|--------|-------------|
+| `LOG_ID` | UUID primary key (auto-generated) |
+| `ACTION` | Action type: `insert` or `edit` or `delete`|
+| `ROWNUM` | Reference to crossref RowNumber (nullable) |
+| `BILLTO_FROM` | Original Bill-To value (for edits) |
+| `BILLTO_TO` | New Bill-To value |
+| `SHIPTO_FROM` | Original Ship-To value (for edits) |
+| `SHIPTO_TO` | New Ship-To value |
+| `HQ_FROM` | Original HQ value (for edits) |
+| `HQ_TO` | New HQ value |
+| `SSACCT_FROM` | Original Sage Account (for edits) |
+| `SSACCT_TO` | New Sage Account value |
+| `ACTION_TIMESTAMP` | When the action occurred (UTC) |
 
 ---
 
