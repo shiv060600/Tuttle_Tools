@@ -47,7 +47,7 @@ export interface LogDeleteResponse {
 }
 
 export interface CreateLoggingBody {
-    action: 'edit' | 'insert';
+    action: 'edit' | 'insert' | 'delete';
     rowNum?: number;
     billto_from?: string;
     shipto_from?: string;

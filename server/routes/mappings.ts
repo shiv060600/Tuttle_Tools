@@ -10,7 +10,9 @@ import {
 
 const router: Router = express.Router();
 
-// ============ GET ALL MAPPINGS ============
+//router prefix is /mappings
+
+// get all mappings 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   let conn: Connection | null = null;
   try {
@@ -36,7 +38,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// ============ CREATE MAPPING ============
+// create a mapping
 router.post(
   '/',
   blockDuringBusinessHours,
@@ -66,7 +68,7 @@ router.post(
   }
 );
 
-// ============ UPDATE MAPPING ============
+// update a mapping
 router.put(
   '/:rowNum',
   blockDuringBusinessHours,
@@ -130,7 +132,7 @@ router.put(
   }
 );
 
-// ============ DELETE MAPPING ============
+// delete mapping
 router.delete(
   '/:rowNum',
   blockDuringBusinessHours,

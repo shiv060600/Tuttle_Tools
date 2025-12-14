@@ -35,7 +35,7 @@ router.get('/', async(req: Request<{},{},{}>, res: Response) => {
 
 });
 
-// delete a specific log by LOG_ID (UUID)
+// delete a specific log by LOG_ID which is uuid
 router.delete('/id/:logId', async (req: Request<{ logId: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
     let conn: odbc.Connection | null = null;
     try {

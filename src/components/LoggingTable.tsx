@@ -69,7 +69,7 @@ export function LoggingTable() {
     if (!logs) return [];
     return logs.filter((log) => {
       const match = (field: string | null | undefined, filter: string) =>
-        !filter || (field ?? '').toLowerCase().includes(filter.toLowerCase());
+        filter === '' || (field ?? '').toLowerCase().includes(filter.toLowerCase());
 
       const rowMatch = !debouncedFilters.rowNum || `${log.rowNum ?? ''}`.includes(debouncedFilters.rowNum);
 
@@ -114,7 +114,7 @@ export function LoggingTable() {
       return;
     }
     
-    if (window.confirm(`⚠️ Are you sure you want to delete all logs older than ${clearDays} days?\n\nThis action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete all logs older than ${clearDays} days?\n\nThis action cannot be undone.`)) {
       clearOld.mutate(clearDays, {
         onSuccess: (data: LogDeleteResponse) => {
           const count = data.deleted_count ?? 0;
