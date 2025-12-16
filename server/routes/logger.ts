@@ -134,7 +134,7 @@ router.post('/', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) 
                 ];
 
                 await conn.query(query, params);
-                console.log('✅ Log entry created (edit) for rowNum:', rowNum);
+                console.log(' Log entry created (edit) for rowNum:', rowNum);
                 return res.status(200).json({ updated: 1 });
                 }
             case 'insert': {

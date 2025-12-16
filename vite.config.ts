@@ -5,6 +5,9 @@
 
   export default defineConfig({
     plugins: [react()],
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify('http://tutpub2.tuttlepub.com:3001'),
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

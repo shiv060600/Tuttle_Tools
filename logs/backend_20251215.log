@@ -1,0 +1,59 @@
+
+> Customer Management Interface@0.1.0 server
+> ts-node --project tsconfig.server.json server/index.ts
+
+[dotenv@17.2.3] injecting env (1) from .env.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:859
+    return new TSError(diagnosticText, diagnosticCodes, diagnostics);
+           ^
+TSError: ⨯ Unable to compile TypeScript:
+server/routes/logger.ts(173,18): error TS2678: Type '"delete"' is not comparable to type '"edit" | "insert"'.
+
+    at createTSError (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:859:12)
+    at reportTSError (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:863:19)
+    at getOutput (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:1077:36)
+    at Object.compile (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:1433:41)
+    at Module.m._compile (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:1617:30)
+    at node:internal/modules/cjs/loader:1893:10
+    at Object.require.extensions.<computed> [as .ts] (H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14) {
+  diagnosticCodes: [ 2678 ]
+}
+
+> Customer Management Interface@0.1.0 server
+> ts-node --project tsconfig.server.json server/index.ts
+
+[dotenv@17.2.3] injecting env (1) from .env.local -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+
+==================================================
+🚀 Server running on http://localhost:3001
+==================================================
+
+📋 Available API Endpoints:
+
+  Mappings:
+    GET    /api/mappings          - Get all mappings
+    POST   /api/mappings          - Create mapping
+    PUT    /api/mappings/:rowNum  - Update mapping
+    DELETE /api/mappings/:rowNum  - Delete mapping
+
+  Logging:
+    GET    /api/logging           - Get all logs
+    POST   /api/logging           - Create log entry
+    DELETE /api/logging/:days     - Delete logs older than X days
+    DELETE /api/logging/id/:logId - Delete specific log
+
+  Health:
+    GET    /api/health            - Health check
+
+==================================================
+
+[2025-12-15T13:09:32.388Z] GET /api/mappings
+[2025-12-15T13:14:02.486Z] GET /api/mappings
+[2025-12-15T13:14:04.065Z] GET /api/logging
+[2025-12-15T13:14:11.093Z] GET /api/mappings
+[2025-12-15T13:14:28.146Z] GET /api/logging
+[2025-12-16T18:09:50.613Z] GET /api/mappings
+[2025-12-16T18:09:53.655Z] GET /api/logging

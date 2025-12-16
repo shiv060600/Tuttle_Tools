@@ -44,9 +44,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
 });
 
 // Start server
-app.listen(PORT, (): void => {
+app.listen(PORT, '0.0.0.0', (): void => {
   console.log(`\n${'='.repeat(50)}`);
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT} (accessible on network)`);
   console.log(`${'='.repeat(50)}`);
   console.log(`\n📋 Available API Endpoints:\n`);
   console.log(`  Mappings:`);

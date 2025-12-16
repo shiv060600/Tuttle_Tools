@@ -1,6 +1,0 @@
-
-> Customer Management Interface@0.1.0 server
-> node server/index.js
-
-[dotenv@17.2.3] injecting env (1) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
-Server running on http://localhost:3001
