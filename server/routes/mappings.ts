@@ -1,5 +1,4 @@
 import express, { Request, Response, Router } from 'express';
-import { Connection } from 'odbc';
 import { getConnection } from '../config/db';
 import { blockDuringBusinessHours } from '../middleware/timeCheck';
 import {
@@ -10,14 +9,10 @@ import {
 
 const router: Router = express.Router();
 
-//router prefix is /mappings
-
-// get all mappings 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  let conn: Connection | null = null;
   try {
-    conn = await getConnection();
-    const result = await conn.query<CustomerMapping>(`
+    const pool = await getConnection();
+    const result = await pool.request().query<CustomerMapping>(`
       SELECT 
         c.RowNum as rowNum,
         c.Billto as billto,
@@ -29,16 +24,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         IPS.dbo.crossref as c 
         LEFT JOIN TUTLIV.dbo.ARCUS as a ON c.Ssacct = a.IDCUST
     `);
-    res.json(result);
+    res.json(result.recordset);
   } catch (err) {
     console.error('Error fetching mappings:', err);
     res.status(500).json({ error: 'Failed to fetch customer mappings' });
-  } finally {
-    if (conn) await conn.close();
   }
 });
 
-// create a mapping
 router.post(
   '/',
   blockDuringBusinessHours,
@@ -50,25 +42,23 @@ router.post(
       return;
     }
 
-    let conn: Connection | null = null;
     try {
-      conn = await getConnection();
-      const result = (await conn.query(
-        `INSERT INTO IPS.dbo.crossref (Billto, Shipto, HQ, Ssacct) VALUES (?, ?, ?, ?)`,
-        [billto, shipto ?? '', hq, ssacct]
-      ));
+      const pool = await getConnection();
+      const result = await pool.request()
+        .input('billto', billto)
+        .input('shipto', shipto ?? '')
+        .input('hq', hq)
+        .input('ssacct', ssacct)
+        .query(`INSERT INTO IPS.dbo.crossref (Billto, Shipto, HQ, Ssacct) VALUES (@billto, @shipto, @hq, @ssacct)`);
       console.log('✅ Mapping created - BillTo:', billto, 'HQ:', hq);
-      res.json({ inserted: (result as any).count });
+      res.json({ inserted: result.rowsAffected[0] });
     } catch (err) {
       console.error('Error creating mapping:', err);
       res.status(500).json({ error: 'Failed to create customer mapping' });
-    } finally {
-      if (conn) await conn.close();
     }
   }
 );
 
-// update a mapping
 router.put(
   '/:rowNum',
   blockDuringBusinessHours,
@@ -82,23 +72,24 @@ router.put(
     const { billto, shipto, hq, ssacct } = req.body;
 
     const updates: string[] = [];
-    const params: (string | number)[] = [];
+    const pool = await getConnection();
+    const request = pool.request();
 
     if (billto !== undefined) {
-      updates.push('Billto = ?');
-      params.push(billto);
+      updates.push('Billto = @billto');
+      request.input('billto', billto);
     }
     if (shipto !== undefined) {
-      updates.push('Shipto = ?');
-      params.push(shipto ?? '');
+      updates.push('Shipto = @shipto');
+      request.input('shipto', shipto ?? '');
     }
     if (hq !== undefined) {
-      updates.push('HQ = ?');
-      params.push(hq);
+      updates.push('HQ = @hq');
+      request.input('hq', hq);
     }
     if (ssacct !== undefined) {
-      updates.push('Ssacct = ?');
-      params.push(ssacct);
+      updates.push('Ssacct = @ssacct');
+      request.input('ssacct', ssacct);
     }
 
     if (updates.length === 0) {
@@ -106,33 +97,27 @@ router.put(
       return;
     }
 
-    params.push(rowNum);
+    request.input('rowNum', rowNum);
 
-    let conn: Connection | null = null;
     try {
-      conn = await getConnection();
-      const result = await conn.query(
-        `UPDATE IPS.dbo.crossref SET ${updates.join(', ')} WHERE RowNum = ?`,
-        params
+      const result = await request.query(
+        `UPDATE IPS.dbo.crossref SET ${updates.join(', ')} WHERE RowNum = @rowNum`
       );
 
-      if ((result as any).count === 0) {
+      if (result.rowsAffected[0] === 0) {
         res.status(404).json({ error: `No row found with RowNum ${rowNum}` });
         return;
       }
 
       console.log('✅ Mapping updated - RowNum:', rowNum);
-      res.json({ updated: (result as any).count });
+      res.json({ updated: result.rowsAffected[0] });
     } catch (err) {
       console.error('Error updating mapping:', err);
       res.status(500).json({ error: 'Failed to update customer mapping' });
-    } finally {
-      if (conn) await conn.close();
     }
   }
 );
 
-// delete mapping
 router.delete(
   '/:rowNum',
   blockDuringBusinessHours,
@@ -143,26 +128,22 @@ router.delete(
       return;
     }
 
-    let conn: Connection | null = null;
     try {
-      conn = await getConnection();
-      const result = await conn.query(
-        `DELETE FROM IPS.dbo.crossref WHERE RowNum = ?`,
-        [rowNum]
-      );
+      const pool = await getConnection();
+      const result = await pool.request()
+        .input('rowNum', rowNum)
+        .query(`DELETE FROM IPS.dbo.crossref WHERE RowNum = @rowNum`);
 
-      if ((result as any).count === 0) {
+      if (result.rowsAffected[0] === 0) {
         res.status(404).json({ error: `No row found with RowNum ${rowNum}` });
         return;
       }
 
       console.log('✅ Mapping deleted - RowNum:', rowNum);
-      res.json({ deleted: (result as any).count });
+      res.json({ deleted: result.rowsAffected[0] });
     } catch (err) {
       console.error('Error deleting mapping:', err);
       res.status(500).json({ error: 'Failed to delete customer mapping' });
-    } finally {
-      if (conn) await conn.close();
     }
   }
 );

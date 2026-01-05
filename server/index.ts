@@ -2,36 +2,37 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Load environment variables
-dotenv.config({ path: String.raw`H:\INTERNAL_TOOLS\Tuttle_Customer_Mapping\.env.local` });
+// load env
+dotenv.config();
 
-// Import routes
+// routes
 import mappingsRoutes from './routes/mappings';
 import loggingRoutes  from './routes/logger';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
 
-// Middleware
+// middleware
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
+// Request logging - must come before routes
 app.use((req: Request, res: Response, next: NextFunction) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] ${req.method} ${req.url}`);
   next();
 });
 
-// Mount routes
-app.use('/api/mappings', mappingsRoutes);
-app.use('/api/logging', loggingRoutes);
-
-// Health check endpoint
+// Routes
 app.get('/api/health', (req: Request, res: Response): void => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/mappings', mappingsRoutes);
+app.use('/api/logging', loggingRoutes);
+
+
+//error handlers are after routes in the order they should be accessed
 // 404 handler
 app.use((req: Request, res: Response): void => {
   res.status(404).json({ error: 'Endpoint not found' });
@@ -46,7 +47,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
 // Start server
 app.listen(PORT, '0.0.0.0', (): void => {
   console.log(`\n${'='.repeat(50)}`);
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT} (accessible on network)`);
+  console.log(` Server running on http://0.0.0.0:${PORT} (accessible on network)`);
   console.log(`${'='.repeat(50)}`);
   console.log(`\n📋 Available API Endpoints:\n`);
   console.log(`  Mappings:`);
