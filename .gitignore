@@ -6,3 +6,4 @@ logs/*.log
 .env.example
 .nginx.conf
 dist/*
+env.example
