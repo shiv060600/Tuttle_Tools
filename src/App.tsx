@@ -44,10 +44,7 @@ export default function App() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-          {sidebarOpen && 
-            <SideNav open={sidebarOpen} setOpen={setSidebarOpen} />
-          }
-
+          <SideNav open={sidebarOpen} setOpen={setSidebarOpen} />
 
           <main className="flex-1 overflow-y-auto bg-gray-50">
             <Routes>

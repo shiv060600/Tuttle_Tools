@@ -14,20 +14,19 @@ export default function SideNav({ open, setOpen }: SideNavProps) {
     { path: '/customer-mapping', label: 'Customer Mapping', icon: Database },
   ];
 
+  if (!open) return null;
+
   return (
     <aside 
-      className={`
-        bg-white border-r border-gray-200 flex flex-col
-        transition-all duration-500 ease-in-out
-        ${open ? 'w-[30%] opacity-100' : 'w-0 opacity-0 overflow-hidden'}
-      `}
+      className="bg-white border-r border-gray-200 flex flex-col w-64 transition-all duration-300 ease-in-out"
     >
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Navigation</h2>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="hover:bg-gray-600 rounded-lg "
+          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+          aria-label="Close sidebar"
         >
           <X className="size-5" />
         </button>
