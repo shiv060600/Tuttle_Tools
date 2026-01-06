@@ -3,18 +3,7 @@ import { Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLogging, useDeleteLogItem, useDeleteOldLogs } from '../../hooks/useLogger';
 import { LogEntry, LogDeleteResponse } from '../../types/logging';
-
-// simple debounce hook reused for filters
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const handle = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(handle);
-  }, [value, delay]);
-
-  return debounced;
-}
+import { useDebounce } from '@/hooks/useDebounce';
 
 type LogFilters = {
   action: string;
