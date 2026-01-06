@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { CustomerMapping, CreateCustomerMappingDto } from '../types/customer-mapping';
-import { useCreateCustomerMapping, useUpdateCustomerMapping } from '../hooks/useCustomerMappings';
-import { useCreateLog } from '../hooks/useLogger';
-import { LoggingBody } from '../types/logging';
+import { CustomerMapping, CreateCustomerMappingDto } from '../../types/customer-mapping';
+import { useCreateCustomerMapping, useUpdateCustomerMapping } from '../../hooks/useCustomerMappings';
+import { useCreateLog } from '../../hooks/useLogger';
+import { LoggingBody } from '../../types/logging';
 
 interface CustomerMappingFormProps {
   mapping?: CustomerMapping | null;

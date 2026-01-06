@@ -1,28 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { useGetCustomerMappings, useDeleteCustomerMapping } from '../hooks/useCustomerMappings';
-import { CustomerMapping } from '../types/customer-mapping';
+import { useGetCustomerMappings, useDeleteCustomerMapping } from '../../hooks/useCustomerMappings';
+import { CustomerMapping } from '../../types/customer-mapping';
 import { CustomerMappingForm } from './CustomerMappingForm';
 import { useCreateLog } from '@/hooks/useLogger';
 import { LoggingBody } from '@/types/logging';
-
-// Debounce hook for search inputs
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ColumnFilters {
   billto: string;
