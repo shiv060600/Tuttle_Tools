@@ -29,6 +29,10 @@ export interface LogEntryBody {
   source?: string;
 }
 
+export interface GetBookParamsDict {
+  isbn : string
+}
+
 // ============ API Response Types ============
 export interface ApiResponse<T = unknown> {
   data?: T;

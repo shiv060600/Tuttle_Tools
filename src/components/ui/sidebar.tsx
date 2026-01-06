@@ -1,4 +1,4 @@
-import { X, Home, Database } from "lucide-react";
+import { X, Home, Database,BookA } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 interface SideNavProps {
@@ -12,6 +12,7 @@ export default function SideNav({ open, setOpen }: SideNavProps) {
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/customer-mapping', label: 'Customer Mapping', icon: Database },
+    { path: '/book-information', label: 'Book Information', icon: BookA}
   ];
 
   if (!open) return null;

@@ -7,6 +7,7 @@ import tuttleLogo from './assets/tuttlejpeg.jpg';
 import SideNav from './components/ui/sidebar';
 import HomePage from './pages/home/page';
 import CustomerMappingPage from './pages/customer-mapping/page';
+import BookPage from './pages/book-information/page';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/customer-mapping" element={<CustomerMappingPage />} />
+              <Route path="/book-information" element={<BookPage/>} />
             </Routes>
           </main>
         </div>
