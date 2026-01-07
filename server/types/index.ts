@@ -63,3 +63,37 @@ export interface CreateLoggingBody {
     Ssacct_to?: string;
     ACTION_TIMESTAMP?: string;
 }
+
+export interface Book {
+  ISBN: string | null;
+  TITLE: string | null;
+  PROD_TYPE: string | null;
+  PUB_DATE: string | null;
+  PUB_STATUS: string | null;
+  PROD_CLASS: string | null;
+  SEAS: string | null;
+  SUB_PUB: string | null;
+  RETAIL_PRICE: number | null;
+  WEBCAT1: string | null;
+  WEBCAT2: string | null;
+  WEBCAT2_DESCR: string | null;
+  WEBCAT3: string | null;
+  BISAC_CODE: string | null;
+  QTY_ON_HAND: number | null | 0;  
+  QTY_ON_ORDER: number | null |0 ; 
+  WATCH: string | null;
+  CTNQTY: number | null;
+  OLD_CTN_QTY: number | null;
+  MINRPTQTY: string | null;
+  GENERAL_COMMENTS: string | null;
+  INTERNAL_COMMENTS: string | null;
+  IWD: string | null;
+  PUBLISHER: string | null;
+  EXPDATE: string | null;
+  SELLOFF: string | null;
+  LAST_COST: number | null;
+  IPS_ON_HAND: number | null;
+  IPS_ON_ORDER: number | null;
+  OPC: string | null;
+  PO_COMMENTS: string | null;
+}

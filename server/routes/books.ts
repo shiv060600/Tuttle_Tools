@@ -8,7 +8,7 @@ const express = require('express');
 
 
 //route is api/books
-const router: Router = express.router()
+const router: Router = express.Router();
 
 
 router.get('/:isbn',async (req : Request<GetBookParamsDict,{},{}>, res: Response) => {
@@ -53,7 +53,9 @@ router.get('/:isbn',async (req : Request<GetBookParamsDict,{},{}>, res: Response
 
 
 
-})
+});
+
+export default router;
 
 
 

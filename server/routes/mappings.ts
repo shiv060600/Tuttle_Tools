@@ -8,7 +8,7 @@ import {
 } from '../types';
 
 const router: Router = express.Router();
-
+//route is api/mappings
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const pool = await getConnection();

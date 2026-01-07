@@ -8,6 +8,7 @@ dotenv.config();
 // routes
 import mappingsRoutes from './routes/mappings';
 import loggingRoutes  from './routes/logger';
+import bookRoutes from './routes/books'
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
@@ -30,6 +31,7 @@ app.get('/api/health', (req: Request, res: Response): void => {
 
 app.use('/api/mappings', mappingsRoutes);
 app.use('/api/logging', loggingRoutes);
+app.use('/api/books', bookRoutes);
 
 
 //error handlers are after routes in the order they should be accessed
@@ -62,6 +64,10 @@ app.listen(PORT, '0.0.0.0', (): void => {
   console.log(`    DELETE /api/logging/id/:logId - Delete specific log\n`);
   console.log(`  Health:`);
   console.log(`    GET    /api/health            - Health check\n`);
+  console.log(` Books: `);
+  console.log(` GET /api/books/:bookId
+    
+    `)
   console.log(`${'='.repeat(50)}\n`);
 });
 

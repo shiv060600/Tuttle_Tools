@@ -28,7 +28,7 @@ export const useBook = (isbn: string | null) => {
       const result = await response.json();
       return result.data || null;
     },
-    enabled: !!isbn && isbn.trim() !== '', // Only run query if ISBN is provided
+    enabled: !!isbn && isbn.trim() !== '',
     retry: false
   });
 };

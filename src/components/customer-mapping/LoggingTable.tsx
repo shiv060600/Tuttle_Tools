@@ -56,7 +56,8 @@ export function LoggingTable() {
 
   const filteredLogs = useMemo(() => {
     if (!logs) return [];
-    return logs.filter((log) => {
+
+    const matchLogs = logs.filter((log) => {
       const match = (field: string | null | undefined, filter: string) =>
         filter === '' || (field ?? '').toLowerCase().includes(filter.toLowerCase());
 
@@ -75,6 +76,15 @@ export function LoggingTable() {
         rowMatch
       );
     });
+
+    const sortedLogs = matchLogs.sort((a,b) => {
+      const aTime = new Date (a.actionTimestamp).getTime();
+      const bTime = new Date (b.actionTimestamp).getTime();
+      
+      return bTime - aTime;
+    })
+
+    return sortedLogs
   }, [logs, debouncedFilters]);
 
   const handleDeleteLog = (log: LogEntry) => {

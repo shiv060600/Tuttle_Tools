@@ -4,7 +4,7 @@ import { CreateLoggingBody, LogDeleteResponse } from "../types";
 
 const express = require('express');
 const router: Router = express.Router();
-
+//route is /api/logging
 router.get('/', async(req: Request<{},{},{}>, res: Response) => {
     try{
          const pool = await getConnection();

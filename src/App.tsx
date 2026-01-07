@@ -26,7 +26,15 @@ export default function App() {
       <div className="h-screen flex flex-col">
         <header className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center gap-4">
+            <div className="flex justify-between gap-4">
+              
+              <div className='flex flex-row gap-4'>
+                <img src={tuttleLogo} alt="Tuttle Publishing" className="h-12 w-12" />
+                <div>
+                  <h1 className="text-gray-900">Tuttle Publishing</h1>
+                </div>
+              </div>
+
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
@@ -35,11 +43,6 @@ export default function App() {
                 <Menu className="size-5" />
                 <span>Menu</span>
               </button>
-              <img src={tuttleLogo} alt="Tuttle Publishing" className="h-12 w-12" />
-              <div>
-                <h1 className="text-gray-900">Tuttle Publishing</h1>
-                <p className="text-gray-600 mt-1">Customer Mapping Management</p>
-              </div>
             </div>
           </div>
         </header>

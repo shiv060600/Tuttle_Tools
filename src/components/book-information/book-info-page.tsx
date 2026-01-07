@@ -38,7 +38,7 @@ export default function BookInfoPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex flex-col gap-4 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header with Search */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Book Information</h1>
@@ -71,7 +71,7 @@ export default function BookInfoPage() {
       <div className="bg-white rounded-lg shadow-lg border border-gray-200">
         {!searchIsbn ? (
           // No search performed
-          <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="flex flex-col items-center justify-center py-16">
             <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
             <p className="text-xl text-gray-500 font-medium">No book searched for</p>
             <p className="text-gray-400 mt-2">Enter an ISBN above to search for book information</p>
@@ -84,7 +84,7 @@ export default function BookInfoPage() {
           </div>
         ) : error ? (
           // Error state
-          <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="flex flex-col items-center justify-center py-16 px-4 mt-4">
             <div className="text-red-500 mb-4">
               <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -104,8 +104,8 @@ export default function BookInfoPage() {
           // Book data display
           <div className="p-6">
             <div className="mb-6 pb-4 border-b border-gray-300">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">{book.TITLE || "Untitled"}</h2>
-              <p className="text-gray-600">ISBN: {book.ISBN || "N/A"}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">{book.TITLE || "Untitled"}</h1>
+              <p className="text-gray-600 text-xl">ISBN: {book.ISBN || "N/A"}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -105,8 +105,8 @@ export function CustomerMappingTable() {
   // Memoized filtering
   const filteredMappings = useMemo(() => {
     if (!mappings) return [];
-    
-    return mappings.filter(mapping => {
+
+    mappings.filter(mapping => {
       const billtoMatch = !debouncedFilters.billto || 
         mapping.billto.toLowerCase().includes(debouncedFilters.billto.toLowerCase());
       const shiptoMatch = !debouncedFilters.shipto || 
@@ -120,6 +120,10 @@ export function CustomerMappingTable() {
 
       return billtoMatch && shiptoMatch && hqMatch && ssacctMatch && nameCustMatch;
     });
+
+    
+    
+    return mappings
   }, [mappings, debouncedFilters]);
 
   // Pagination
