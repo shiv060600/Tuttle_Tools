@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Plus, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGetCustomerMappings, useDeleteCustomerMapping } from '../../hooks/useCustomerMappings';
@@ -106,7 +106,7 @@ export function CustomerMappingTable() {
   const filteredMappings = useMemo(() => {
     if (!mappings) return [];
 
-    mappings.filter(mapping => {
+    return mappings.filter(mapping => {
       const billtoMatch = !debouncedFilters.billto || 
         mapping.billto.toLowerCase().includes(debouncedFilters.billto.toLowerCase());
       const shiptoMatch = !debouncedFilters.shipto || 
@@ -120,10 +120,6 @@ export function CustomerMappingTable() {
 
       return billtoMatch && shiptoMatch && hqMatch && ssacctMatch && nameCustMatch;
     });
-
-    
-    
-    return mappings
   }, [mappings, debouncedFilters]);
 
   // Pagination
