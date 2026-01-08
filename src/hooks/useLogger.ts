@@ -1,5 +1,6 @@
 import { useQuery,useQueryClient,useMutation } from "@tanstack/react-query";
 import { LoggingBody, LogEntry } from "@/types/logging";
+import { MappingType } from "@/types/customer-mapping";
 
 
 
@@ -20,11 +21,15 @@ const normalizeLog = (row: any): LogEntry => ({
     actionTimestamp: row.ACTION_TIMESTAMP ?? row.action_timestamp ?? '',
 });
 
-const useLogging = () => {
+const useLogging = (loggingType: MappingType = 'original') => {
     return useQuery({
-        queryKey : ['logging'],
+        queryKey : ['logging', loggingType],
         queryFn : async(): Promise<LogEntry[]> => {
-            const response = await fetch(`${API_BASE}/api/logging`,{method:'GET'})
+            const endpoint = loggingType === 'original' ? 'original' : loggingType;
+            const response = await fetch(`${API_BASE}/api/logging/${endpoint}`,{
+                method:'GET',
+                credentials: 'include'
+            })
 
             if(!response.ok){
                 const err = await response.json();
@@ -38,7 +43,7 @@ const useLogging = () => {
     });
 };
 
-const useDeleteOldLogs = () => {
+const useDeleteOldLogs = (loggingType: MappingType = 'original') => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async(days: Number) => {
@@ -46,7 +51,11 @@ const useDeleteOldLogs = () => {
                 throw new Error('rowNum must be number')
             };
 
-            const response = await fetch(`${API_BASE}/api/logging/${days}`,{method:'DELETE'});
+            const endpoint = loggingType === 'original' ? 'original' : loggingType;
+            const response = await fetch(`${API_BASE}/api/logging/${endpoint}/${days}`,{
+                method:'DELETE',
+                credentials: 'include'
+            });
 
             if(!response.ok){
                 const err = await response.json();
@@ -56,12 +65,12 @@ const useDeleteOldLogs = () => {
             return response.json();
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({queryKey:['logging']})
+            queryClient.invalidateQueries({queryKey:['logging', loggingType]})
         }
     });
 }
 
-const useDeleteLogItem = () => {
+const useDeleteLogItem = (loggingType: MappingType = 'original') => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async(logId: string) => {
@@ -69,7 +78,11 @@ const useDeleteLogItem = () => {
                 throw new Error('logId is required');
             }
 
-            const response = await fetch(`${API_BASE}/api/logging/id/${logId}`, { method: 'DELETE' });
+            const endpoint = loggingType === 'original' ? 'original' : loggingType;
+            const response = await fetch(`${API_BASE}/api/logging/${endpoint}/id/${logId}`, { 
+                method: 'DELETE',
+                credentials: 'include'
+            });
 
             if (!response.ok) {
                 const err = await response.json();
@@ -79,18 +92,20 @@ const useDeleteLogItem = () => {
             return response.json();
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['logging'] });
+            queryClient.invalidateQueries({ queryKey: ['logging', loggingType] });
         }
     });
 };
 
-const useCreateLog = () => {
+const useCreateLog = (loggingType: MappingType = 'original') => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async(payload: LoggingBody) => {
-            const response = await fetch(`${API_BASE}/api/logging`, {
+            const endpoint = loggingType === 'original' ? 'original' : loggingType;
+            const response = await fetch(`${API_BASE}/api/logging/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(payload)
             });
 
@@ -102,7 +117,7 @@ const useCreateLog = () => {
             return response.json();
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['logging'] });
+            queryClient.invalidateQueries({ queryKey: ['logging', loggingType] });
         }
     });
 };

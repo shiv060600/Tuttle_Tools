@@ -3,7 +3,12 @@ import { Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLogging, useDeleteLogItem, useDeleteOldLogs } from '../../hooks/useLogger';
 import { LogEntry, LogDeleteResponse } from '../../types/logging';
+import { MappingType } from '../../types/customer-mapping';
 import { useDebounce } from '@/hooks/useDebounce';
+
+interface LoggingTableProps {
+  loggingType: MappingType;
+}
 
 type LogFilters = {
   action: string;
@@ -36,10 +41,10 @@ const formatTs = (ts: string) => {
   return isNaN(d.getTime()) ? ts : d.toLocaleString();
 };
 
-export function LoggingTable() {
-  const { data: logs, isLoading } = useLogging();
-  const deleteItem = useDeleteLogItem();
-  const clearOld = useDeleteOldLogs();
+export function LoggingTable({ loggingType }: LoggingTableProps) {
+  const { data: logs, isLoading } = useLogging(loggingType);
+  const deleteItem = useDeleteLogItem(loggingType);
+  const clearOld = useDeleteOldLogs(loggingType);
 
   const [filters, setFilters] = useState<LogFilters>(emptyFilters);
   const [clearDays, setClearDays] = useState<number>(30);
@@ -57,18 +62,19 @@ export function LoggingTable() {
   const filteredLogs = useMemo(() => {
     if (!logs) return [];
 
-    const matchLogs = logs.filter((log) => {
+      const matchLogs = logs.filter((log) => {
       const match = (field: string | null | undefined, filter: string) =>
         filter === '' || (field ?? '').toLowerCase().includes(filter.toLowerCase());
 
       const rowMatch = !debouncedFilters.rowNum || `${log.rowNum ?? ''}`.includes(debouncedFilters.rowNum);
 
+      const billtoMatch = loggingType === 'ips' || (match(log.billtoFrom, debouncedFilters.billtoFrom) && match(log.billtoTo, debouncedFilters.billtoTo));
+      const shiptoMatch = loggingType === 'ips' || (match(log.shiptoFrom, debouncedFilters.shiptoFrom) && match(log.shiptoTo, debouncedFilters.shiptoTo));
+
       return (
         match(log.action, debouncedFilters.action) &&
-        match(log.billtoFrom, debouncedFilters.billtoFrom) &&
-        match(log.billtoTo, debouncedFilters.billtoTo) &&
-        match(log.shiptoFrom, debouncedFilters.shiptoFrom) &&
-        match(log.shiptoTo, debouncedFilters.shiptoTo) &&
+        billtoMatch &&
+        shiptoMatch &&
         match(log.hqFrom, debouncedFilters.hqFrom) &&
         match(log.hqTo, debouncedFilters.hqTo) &&
         match(log.ssacctFrom, debouncedFilters.ssacctFrom) &&
@@ -189,10 +195,14 @@ export function LoggingTable() {
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Timestamp</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Row #</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">BillTo From</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">BillTo To</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ShipTo From</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ShipTo To</th>
+                {loggingType === 'original' && (
+                  <>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">BillTo From</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">BillTo To</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ShipTo From</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ShipTo To</th>
+                  </>
+                )}
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">HQ From</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">HQ To</th>
                 <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">SSAcct From</th>
@@ -219,42 +229,46 @@ export function LoggingTable() {
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
                   />
                 </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="text"
-                    value={filters.billtoFrom}
-                    onChange={(e) => handleFilterChange('billtoFrom', e.target.value)}
-                    placeholder="BillTo From"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="text"
-                    value={filters.billtoTo}
-                    onChange={(e) => handleFilterChange('billtoTo', e.target.value)}
-                    placeholder="BillTo To"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="text"
-                    value={filters.shiptoFrom}
-                    onChange={(e) => handleFilterChange('shiptoFrom', e.target.value)}
-                    placeholder="ShipTo From"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="text"
-                    value={filters.shiptoTo}
-                    onChange={(e) => handleFilterChange('shiptoTo', e.target.value)}
-                    placeholder="ShipTo To"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                </td>
+                {loggingType === 'original' && (
+                  <>
+                    <td className="px-3 py-1.5">
+                      <input
+                        type="text"
+                        value={filters.billtoFrom}
+                        onChange={(e) => handleFilterChange('billtoFrom', e.target.value)}
+                        placeholder="BillTo From"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <input
+                        type="text"
+                        value={filters.billtoTo}
+                        onChange={(e) => handleFilterChange('billtoTo', e.target.value)}
+                        placeholder="BillTo To"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <input
+                        type="text"
+                        value={filters.shiptoFrom}
+                        onChange={(e) => handleFilterChange('shiptoFrom', e.target.value)}
+                        placeholder="ShipTo From"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <input
+                        type="text"
+                        value={filters.shiptoTo}
+                        onChange={(e) => handleFilterChange('shiptoTo', e.target.value)}
+                        placeholder="ShipTo To"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                    </td>
+                  </>
+                )}
                 <td className="px-3 py-1.5">
                   <input
                     type="text"
@@ -297,7 +311,7 @@ export function LoggingTable() {
             <tbody className="relative">
               {isLoading ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-20 text-center text-gray-500">
+                  <td colSpan={loggingType === 'original' ? 12 : 8} className="px-6 py-20 text-center text-gray-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="size-5 animate-spin" />
                       Loading logs...
@@ -310,10 +324,14 @@ export function LoggingTable() {
                     <td className="px-3 py-2 text-sm text-gray-700 whitespace-nowrap">{formatTs(log.actionTimestamp)}</td>
                     <td className="px-3 py-2 text-sm font-medium text-gray-900">{log.action}</td>
                     <td className="px-3 py-2 text-sm text-gray-600">{log.rowNum ?? '—'}</td>
-                    <td className="px-3 py-2 text-sm text-gray-700">{log.billtoFrom ?? '—'}</td>
-                    <td className="px-3 py-2 text-sm text-gray-700">{log.billtoTo ?? '—'}</td>
-                    <td className="px-3 py-2 text-sm text-gray-700">{log.shiptoFrom ?? '—'}</td>
-                    <td className="px-3 py-2 text-sm text-gray-700">{log.shiptoTo ?? '—'}</td>
+                    {loggingType === 'original' && (
+                      <>
+                        <td className="px-3 py-2 text-sm text-gray-700">{log.billtoFrom ?? '—'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-700">{log.billtoTo ?? '—'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-700">{log.shiptoFrom ?? '—'}</td>
+                        <td className="px-3 py-2 text-sm text-gray-700">{log.shiptoTo ?? '—'}</td>
+                      </>
+                    )}
                     <td className="px-3 py-2 text-sm text-gray-700">{log.hqFrom ?? '—'}</td>
                     <td className="px-3 py-2 text-sm text-gray-700">{log.hqTo ?? '—'}</td>
                     <td className="px-3 py-2 text-sm text-gray-700">{log.ssacctFrom ?? '—'}</td>
@@ -332,7 +350,7 @@ export function LoggingTable() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={12} className="px-6 py-20 text-center text-gray-500">
+                  <td colSpan={loggingType === 'original' ? 12 : 8} className="px-6 py-20 text-center text-gray-500">
                     {hasActiveFilters ? 'No matches found.' : 'No logs yet.'}
                   </td>
                 </tr>

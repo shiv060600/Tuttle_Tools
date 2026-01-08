@@ -18,3 +18,18 @@ CREATE TABLE dbo.TuttleMappingLogger (
 -- Index for efficient range queries on time
 CREATE INDEX IX_TuttleMappingLogger_ActionTimestamp
     ON dbo.TuttleMappingLogger (ACTION_TIMESTAMP);
+
+
+CREATE TABLE dbo.MappingLoggerIPS(
+    LOG_ID              UNIQUEIDENTIFIER NOT NULL DEFAULT (NEWID()) PRIMARY KEY,
+    ROWNUM              INT              NULL, -- reference only, not a PK/FK
+    ACTION              VARCHAR(10)      NOT NULL,
+    HQ_FROM         VARCHAR(50)     NULL,
+    HQ_TO         VARCHAR(50)     NULL,
+    SSACCT_FROM         VARCHAR(50)     NULL,
+    SSACCT_TO           VARCHAR(50)     NULL,
+    ACTION_TIMESTAMP    DATETIME2(3)    NOT NULL DEFAULT (GETDATE())
+);
+
+CREATE INDEX IX_MappingLoggerIPS_ActionTimestamp
+    ON dbo.TuttleMappingLogger (ACTION_TIMESTAMP);

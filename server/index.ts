@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import session from 'express-session';
 
 // load env
 dotenv.config();
@@ -8,13 +9,45 @@ dotenv.config();
 // routes
 import mappingsRoutes from './routes/mappings';
 import loggingRoutes  from './routes/logger';
-import bookRoutes from './routes/books'
+import bookRoutes from './routes/books';
+import authRoutes from './routes/auth';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
 
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true only with HTTPS
+    httpOnly: true, // Prevent XSS attacks
+    sameSite: 'lax', // CSRF protection, works with both same-site and cross-site
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 // middleware
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://tutpub2.tuttlepub.com:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean); // Remove any undefined values
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // Allow cookies to be sent
+}));
 app.use(express.json());
 
 // Request logging - must come before routes
@@ -29,6 +62,7 @@ app.get('/api/health', (req: Request, res: Response): void => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/mappings', mappingsRoutes);
 app.use('/api/logging', loggingRoutes);
 app.use('/api/books', bookRoutes);

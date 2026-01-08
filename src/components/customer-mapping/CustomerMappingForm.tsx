@@ -1,38 +1,52 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { CustomerMapping, CreateCustomerMappingDto } from '../../types/customer-mapping';
+import { CustomerMapping, CreateCustomerMappingDto, CreateIPSMappingDto, MappingType } from '../../types/customer-mapping';
 import { useCreateCustomerMapping, useUpdateCustomerMapping } from '../../hooks/useCustomerMappings';
 import { useCreateLog } from '../../hooks/useLogger';
 import { LoggingBody } from '../../types/logging';
 
 interface CustomerMappingFormProps {
   mapping?: CustomerMapping | null;
+  mappingType: MappingType;
   onClose: () => void;
 }
 
-export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormProps) {
-  const createMutation = useCreateCustomerMapping();
-  const updateMutation = useUpdateCustomerMapping();
-  const createLogMutation = useCreateLog();
+export function CustomerMappingForm({ mapping, mappingType, onClose }: CustomerMappingFormProps) {
+  const createMutation = useCreateCustomerMapping(mappingType);
+  const updateMutation = useUpdateCustomerMapping(mappingType);
+  const createLogMutation = useCreateLog(mappingType);
   
-  const [formData, setFormData] = useState<CreateCustomerMappingDto>({
-    billto: '',
-    shipto: null,
-    hq: '',
-    ssacct: '',
-  });
+  const [formData, setFormData] = useState<CreateCustomerMappingDto | CreateIPSMappingDto>(
+    mappingType === 'ips' 
+      ? { hq: '', ssacct: '' }
+      : { billto: '', shipto: null, hq: '', ssacct: '' }
+  );
 
   useEffect(() => {
     if (mapping) {
-      setFormData({
-        billto: mapping.billto,
-        shipto: mapping.shipto,
-        hq: mapping.hq,
-        ssacct: mapping.ssacct,
-      });
+      if (mappingType === 'ips') {
+        setFormData({
+          hq: mapping.hq,
+          ssacct: mapping.ssacct,
+        });
+      } else {
+        setFormData({
+          billto: mapping.billto || '',
+          shipto: mapping.shipto,
+          hq: mapping.hq,
+          ssacct: mapping.ssacct,
+        });
+      }
+    } else {
+      // Reset form when creating new
+      setFormData(
+        mappingType === 'ips' 
+          ? { hq: '', ssacct: '' }
+          : { billto: '', shipto: null, hq: '', ssacct: '' }
+      );
     }
-  }, [mapping]);
+  }, [mapping, mappingType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,12 +60,12 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
         const loggerBody: LoggingBody = {
           action: 'edit',
           rowNum: mapping.rowNum,
-          billto_from: mapping.billto,
-          shipto_from: mapping.shipto,
+          billto_from: mappingType === 'ips' ? null : mapping.billto,
+          shipto_from: mappingType === 'ips' ? null : mapping.shipto,
           HQ_from: mapping.hq,
           Ssacct_from: mapping.ssacct,
-          billto_to: formData.billto,
-          shipto_to: formData.shipto,
+          billto_to: mappingType === 'ips' ? null : (formData as CreateCustomerMappingDto).billto,
+          shipto_to: mappingType === 'ips' ? null : (formData as CreateCustomerMappingDto).shipto,
           HQ_to: formData.hq,
           Ssacct_to: formData.ssacct,
           ACTION_TIMESTAMP: new Date().toISOString(),
@@ -71,8 +85,8 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
           shipto_from: null,
           HQ_from: null,
           Ssacct_from: null,
-          billto_to: formData.billto,
-          shipto_to: formData.shipto,
+          billto_to: mappingType === 'ips' ? null : (formData as CreateCustomerMappingDto).billto,
+          shipto_to: mappingType === 'ips' ? null : (formData as CreateCustomerMappingDto).shipto,
           HQ_to: formData.hq,
           Ssacct_to: formData.ssacct,
           ACTION_TIMESTAMP: new Date().toISOString(),
@@ -94,10 +108,10 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
     }
   };
 
-  const handleChange = (field: keyof CreateCustomerMappingDto, value: string) => {
+  const handleChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value === '' ? null : value,
+      [field]: value === '' ? (field === 'shipto' ? null : '') : value,
     }));
   };
 
@@ -134,35 +148,39 @@ export function CustomerMappingForm({ mapping, onClose }: CustomerMappingFormPro
             </div>
           )}
 
-          <div>
-            <label htmlFor="billto" className="block text-gray-700 mb-1">
-              Bill To (SL Number) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="billto"
-              required
-              value={formData.billto}
-              onChange={(e) => handleChange('billto', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter SL Number"
-            />
-          </div>
+          {mappingType === 'original' && (
+            <>
+              <div>
+                <label htmlFor="billto" className="block text-gray-700 mb-1">
+                  Bill To (SL Number) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="billto"
+                  required
+                  value={(formData as CreateCustomerMappingDto).billto || ''}
+                  onChange={(e) => handleChange('billto', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter SL Number"
+                />
+              </div>
 
-          <div>
-            <label htmlFor="shipto" className="block text-gray-700 mb-1">
-              Ship To
-            </label>
-            <input
-              type="text"
-              id="shipto"
-              value={formData.shipto || ''}
-              onChange={(e) => handleChange('shipto', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Usually null (leave blank)"
-            />
-            <p className="mt-1 text-gray-500">Leave blank for null value</p>
-          </div>
+              <div>
+                <label htmlFor="shipto" className="block text-gray-700 mb-1">
+                  Ship To
+                </label>
+                <input
+                  type="text"
+                  id="shipto"
+                  value={(formData as CreateCustomerMappingDto).shipto || ''}
+                  onChange={(e) => handleChange('shipto', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Usually null (leave blank)"
+                />
+                <p className="mt-1 text-gray-500">Leave blank for null value</p>
+              </div>
+            </>
+          )}
 
           <div>
             <label htmlFor="hq" className="block text-gray-700 mb-1">

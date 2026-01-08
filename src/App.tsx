@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { Routes, Route } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, Shield, LogOut, LogIn } from 'lucide-react';
 import tuttleLogo from './assets/tuttlejpeg.jpg';
 import SideNav from './components/ui/sidebar';
+import { useAuth } from './contexts/AuthContext';
+import { LoginDialog } from './components/auth/LoginDialog';
 import HomePage from './pages/home/page';
 import CustomerMappingPage from './pages/customer-mapping/page';
 import BookPage from './pages/book-information/page';
@@ -20,6 +22,8 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isAdmin, logout, isLoading } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -35,14 +39,39 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-                aria-label="Toggle menu"
-              >
-                <Menu className="size-5" />
-                <span>Menu</span>
-              </button>
+              <div className="flex flex-row gap-2 items-center">
+                {!isLoading && (
+                  isAdmin ? (
+                    <div className="flex items-center gap-2 bg-green-100 border border-green-300 rounded-lg px-3 py-2">
+                      <Shield className="size-4 text-green-700" />
+                      <span className="text-sm font-medium text-green-700">Admin</span>
+                      <button
+                        onClick={logout}
+                        className="ml-1 p-1 text-green-700 hover:bg-green-200 rounded transition-colors"
+                        title="Logout"
+                      >
+                        <LogOut className="size-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowLogin(true)}
+                      className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-200 transition-colors"
+                    >
+                      <LogIn className="size-4 text-gray-700" />
+                      <span className="text-sm font-medium text-gray-700">Admin Login</span>
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                  aria-label="Toggle menu"
+                >
+                  <Menu className="size-5" />
+                  <span>Menu</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -60,6 +89,7 @@ export default function App() {
         </div>
       </div>
 
+      {showLogin && <LoginDialog onClose={() => setShowLogin(false)} />}
       <Toaster position="top-right" />
     </QueryClientProvider>
   );

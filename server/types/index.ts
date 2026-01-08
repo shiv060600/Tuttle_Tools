@@ -1,11 +1,11 @@
 // ============ Database/Domain Types ============
 export interface CustomerMapping {
   rowNum: number;
-  billto: string;
-  shipto: string;
+  billto: string | null;
+  shipto: string | null;
   hq: string;
   ssacct: string;
-  nameCust?: string;
+  nameCust?: string | null;
 }
 
 // ============ Request Body Types ============
