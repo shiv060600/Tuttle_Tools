@@ -5,7 +5,7 @@ const router: Router = express.Router();
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || '';
 
-// Type helper for session
+
 interface SessionData {
   isAdmin?: boolean;
   userId?: string;
@@ -13,14 +13,14 @@ interface SessionData {
 }
 
 // POST /api/auth/login
-router.post('/login', async (req: Request<{}, {}, { username: string; password: string }>, res: Response): Promise<void> => {
+router.post('/login', async (req: Request<{}, {}, { username: string; password: string }>, res: Response)=> {
   try {
     const { username, password } = req.body;
     console.log('username : ', username);
     console.log('pass: ', password);
     if (!username || !password) {
-      res.status(400).json({ error: 'Username and password are required' });
-      return;
+      return res.status(400).json({ error: 'Username and password are required' });
+
     }
 
     if (username === ADMIN_USER && password === ADMIN_PASS) {
