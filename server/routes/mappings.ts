@@ -10,7 +10,7 @@ import {
 
 const router: Router = express.Router();
 
-// ============ ORIGINAL MAPPINGS (crossref table) ============
+// ============ ORIGINAL MAPPINGS (crossref_original table) ============
 // GET /api/mappings/original
 router.get('/original', async (req: Request, res: Response) => {
   try {
@@ -24,7 +24,7 @@ router.get('/original', async (req: Request, res: Response) => {
         c.Ssacct as ssacct,
         a.NAMECUST as nameCust
       FROM 
-        IPS.dbo.crossref as c 
+        IPS.dbo.crossref_original as c 
         LEFT JOIN TUTLIV.dbo.ARCUS as a ON c.Ssacct = a.IDCUST
     `);
     console.log('XX Fetched original mappings - Count:', result.recordset.length);
@@ -54,7 +54,7 @@ router.post(
         .input('shipto', shipto ?? '')
         .input('hq', hq)
         .input('ssacct', ssacct)
-        .query(`INSERT INTO IPS.dbo.crossref (Billto, Shipto, HQ, Ssacct) VALUES (@billto, @shipto, @hq, @ssacct)`);
+        .query(`INSERT INTO IPS.dbo.crossref_original (Billto, Shipto, HQ, Ssacct) VALUES (@billto, @shipto, @hq, @ssacct)`);
       console.log('XX Original mapping created - BillTo:', billto, 'ShipTo:', shipto, 'HQ:', hq, 'SSAcct:', ssacct);
       return res.status(200).json({ inserted: result.rowsAffected[0] });
     } catch (err) {
@@ -107,7 +107,7 @@ router.put(
 
     try {
       const result = await request.query(
-        `UPDATE IPS.dbo.crossref SET ${updates.join(', ')} WHERE RowNum = @rowNum`
+        `UPDATE IPS.dbo.crossref_original SET ${updates.join(', ')} WHERE RowNum = @rowNum`
       );
 
       if (result.rowsAffected[0] === 0) {
@@ -139,7 +139,7 @@ router.delete(
       const pool = await getConnection();
       const result = await pool.request()
         .input('rowNum', rowNum)
-        .query(`DELETE FROM IPS.dbo.crossref WHERE RowNum = @rowNum`);
+        .query(`DELETE FROM IPS.dbo.crossref_original WHERE RowNum = @rowNum`);
 
       if (result.rowsAffected[0] === 0) {
         console.log('XX Original mapping deletion failed - Row not found:', rowNum);
