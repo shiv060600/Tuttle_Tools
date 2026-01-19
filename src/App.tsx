@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, Shield, LogOut, LogIn } from 'lucide-react';
 import tuttleLogo from './assets/tuttlejpeg.jpg';
 import SideNav from './components/ui/sidebar';
@@ -24,6 +25,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAdmin, logout, isLoading } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
+  const location = useLocation();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -65,7 +67,7 @@ export default function App() {
                 )}
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-all duration-300 ease-in-out transform hover:scale-[1.02]"
                   aria-label="Toggle menu"
                 >
                   <Menu className="size-5" />
@@ -75,16 +77,44 @@ export default function App() {
             </div>
           </div>
         </header>
-
+                
         <div className="flex flex-1 overflow-hidden">
           <SideNav open={sidebarOpen} setOpen={setSidebarOpen} />
-
           <main className="flex-1 overflow-y-auto bg-gray-50">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/customer-mapping" element={<CustomerMappingPage />} />
-              <Route path="/book-information" element={<BookPage/>} />
-            </Routes>
+            <AnimatePresence mode="wait" initial={false}>
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <HomePage />
+                  </motion.div>
+                } />
+                <Route path="/customer-mapping" element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <CustomerMappingPage />
+                  </motion.div>
+                } />
+                <Route path="/book-information" element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <BookPage />
+                  </motion.div>
+                } />
+              </Routes>
+            </AnimatePresence>
           </main>
         </div>
       </div>

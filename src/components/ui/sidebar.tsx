@@ -1,5 +1,6 @@
 import { X, Home, Database,BookA } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface SideNavProps {
   open: boolean;
@@ -15,12 +16,16 @@ export default function SideNav({ open, setOpen }: SideNavProps) {
     { path: '/book-information', label: 'Book Information', icon: BookA}
   ];
 
-  if (!open) return null;
-
   return (
-    <aside 
-      className="bg-white border-r border-gray-200 flex flex-col w-64 transition-all duration-300 ease-in-out"
-    >
+    <AnimatePresence>
+      {open && (
+        <motion.aside
+          initial={{ x: "-100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "-100%" }}
+          transition={{ duration: 0.1, ease: "easeInOut" }}
+          className="bg-white border-r border-gray-200 flex flex-col w-64"
+        >
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Navigation</h2>
         <button
@@ -58,6 +63,8 @@ export default function SideNav({ open, setOpen }: SideNavProps) {
           );
         })}
       </nav>
-    </aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 }
