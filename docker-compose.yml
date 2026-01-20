@@ -1,11 +1,31 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Vector Database
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=tuttle_docs
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d tuttle_docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend API Server
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: server/Dockerfile
     env_file:
       - .env
     ports:
@@ -19,6 +39,9 @@ services:
       - DB_PASS=${DB_PASS}
     volumes:
       - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
@@ -29,7 +52,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      dockerfile: frontend/Dockerfile
     ports:
       - "0.0.0.0:3000:80"
     environment:
@@ -41,10 +64,33 @@ services:
       - app-network
     restart: unless-stopped
 
+  # Ingestion Service for RAG
+  ingestion:
+    build:
+      context: ./ingestion
+      dockerfile: Dockerfile
+    profiles: ["ingest"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./ingestion/sage_documentation:/app/sage_documentation:ro
+    environment:
+      - POSTGRES_DB=tuttle_docs
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    restart: "no"
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  logs:
+  postgres_data:
     driver: local

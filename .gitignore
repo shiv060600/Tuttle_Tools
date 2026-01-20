@@ -7,3 +7,11 @@ logs/*.log
 .nginx.conf
 dist/*
 env.example
+ingestion/sage_documentation
+*.json
+frontend/*.json
+frontend/Attributions.md
+nginx.conf
+tailwind.config.js
+vite-env.d.ts
+vite.config.ts

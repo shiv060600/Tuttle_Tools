@@ -71,8 +71,8 @@
             "vite": "6.3.5"
       },
       "scripts": {
-            "dev": "vite --host",
-            "build": "vite build",
+            "dev": "cd frontend && vite --host",
+            "build": "cd frontend && vite build",
             "server": "ts-node --project tsconfig.server.json server/index.ts",
             "server:watch": "nodemon --exec ts-node --project tsconfig.server.json server/index.ts --ext ts",
             "server:build": "tsc -p tsconfig.server.json",

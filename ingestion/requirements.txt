@@ -1,0 +1,5 @@
+llama-index
+llama-index-vector-stores-postgres
+llama-index-embeddings-ollama
+llama-index-llms-ollama
+psycopg2-binary
