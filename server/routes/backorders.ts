@@ -21,7 +21,7 @@ router.get('/:isbn', async (req: Request<{isbn: string}>, res: Response<BookBack
 
         const result: IResult<BookBackorder> = await conn.request()
             .input('isbn', isbn)
-            .query('SELECT ISBN, QTY as QTY_BACKORDERD FROM IPS.dbo.book_backorders_table WHERE ISBN = @isbn');
+            .query('SELECT ISBN, QTY as QTY_BACKORDERED FROM TUTLIV.dbo.BACKORDER_REPORT WHERE ISBN = @isbn');
 
         if (result.recordset.length === 0) {
             const book: BookBackorder = {
