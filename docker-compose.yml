@@ -10,6 +10,7 @@ services:
       - POSTGRES_DB=tuttle_docs
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     networks:
@@ -91,6 +92,4 @@ networks:
   app-network:
     driver: bridge
 
-volumes:
-  postgres_data:
-    driver: local
+## Named volume 'postgres_data' removed — using bind mount ./postgres_data instead
