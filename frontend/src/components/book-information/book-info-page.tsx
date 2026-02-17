@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useBook } from "@/hooks/useBooks";
 import { Search, BookOpen } from "lucide-react";
+import { useBackorders } from "@/hooks/useBackorders";
 
 const formatValue = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined) {
@@ -23,6 +24,7 @@ export default function BookInfoPage() {
   const [isbn, setIsbn] = useState<string>("");
   const [searchIsbn, setSearchIsbn] = useState<string | null>(null);
   const { data: book, isLoading, error } = useBook(searchIsbn);
+  const {data: backorderData, isLoading: backorderLoading, error: backorderError} = useBackorders(searchIsbn);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +60,7 @@ export default function BookInfoPage() {
           </div>
           <button
             type="submit"
-            disabled={!isbn.trim() || isLoading}
+            disabled={!isbn.trim() || isLoading || backorderLoading}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
           >
             <Search className="w-5 h-5" />
@@ -92,6 +94,7 @@ export default function BookInfoPage() {
             </div>
             <p className="text-xl text-gray-700 font-medium mb-2">Error loading book</p>
             <p className="text-gray-500">{error instanceof Error ? error.message : "An unexpected error occurred"}</p>
+            <p className="text-gray-500">{backorderError instanceof Error ? backorderError.message : "An unexpected error occurred"}</p>
           </div>
         ) : !book ? (
           // No book found
@@ -137,6 +140,7 @@ export default function BookInfoPage() {
                 <BookField label="Old Carton Quantity" value={book.OLD_CTN_QTY} />
                 <BookField label="Min Report Quantity" value={book.MINRPTQTY} />
                 <BookField label="Watch" value={book.WATCH} />
+                <BookField label="Backordered Quantity" value={backorderData?.QTY_BACKORDERED ?? 0} /> 
               </div>
             </div>
 

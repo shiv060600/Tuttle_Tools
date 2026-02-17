@@ -97,3 +97,8 @@ export interface Book {
   OPC: string | null;
   PO_COMMENTS: string | null;
 }
+
+export interface BookBackorder {
+  ISBN: string,
+  QTY_BACKORDERED: number
+}

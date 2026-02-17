@@ -11,6 +11,7 @@ import mappingsRoutes from './routes/mappings';
 import loggingRoutes  from './routes/logger';
 import bookRoutes from './routes/books';
 import authRoutes from './routes/auth';
+import backorderRoutes from './routes/backorders';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
@@ -66,7 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/mappings', mappingsRoutes);
 app.use('/api/logging', loggingRoutes);
 app.use('/api/books', bookRoutes);
-
+app.use('/api/backorders', backorderRoutes);
 
 //error handlers are after routes in the order they should be accessed
 // 404 handler
@@ -100,6 +101,10 @@ app.listen(PORT, '0.0.0.0', (): void => {
   console.log(`    GET    /api/health            - Health check\n`);
   console.log(` Books: `);
   console.log(` GET /api/books/:bookId
+    
+    `)
+  console.log(` Backorders: `);
+  console.log(` GET /api/backorders/:isbn
     
     `)
   console.log(`${'='.repeat(50)}\n`);
