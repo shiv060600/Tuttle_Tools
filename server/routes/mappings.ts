@@ -13,9 +13,10 @@ const router: Router = express.Router();
 // ============ ORIGINAL MAPPINGS (crossref_original table) ============
 // GET /api/mappings/original
 router.get('/original', async (req: Request, res: Response) => {
+  let conn;
   try {
-    const pool = await getConnection();
-    const result = await pool.request().query<CustomerMapping>(`
+    conn = await getConnection();
+    const result = await conn.request().query<CustomerMapping>(`
       SELECT 
         c.RowNum as rowNum,
         c.Billto as billto,
@@ -32,6 +33,10 @@ router.get('/original', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('XX Error fetching original mappings:', err);
     return res.status(500).json({ error: 'Failed to fetch original mappings' });
+  } finally {
+    if (conn) {
+      conn.close();
+    }
   }
 });
 
@@ -47,9 +52,10 @@ router.post(
       return res.status(400).json({ error: 'billto, hq, and ssacct are required' });
     }
 
+    let conn;
     try {
-      const pool = await getConnection();
-      const result = await pool.request()
+      conn = await getConnection();
+      const result = await conn.request()
         .input('billto', billto)
         .input('shipto', shipto ?? '')
         .input('hq', hq)
@@ -60,6 +66,10 @@ router.post(
     } catch (err) {
       console.error('XX Error creating original mapping:', err);
       return res.status(500).json({ error: 'Failed to create original mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );
@@ -78,34 +88,35 @@ router.put(
     const { billto, shipto, hq, ssacct } = req.body;
 
     const updates: string[] = [];
-    const pool = await getConnection();
-    const request = pool.request();
-
-    if (billto !== undefined) {
-      updates.push('Billto = @billto');
-      request.input('billto', billto);
-    }
-    if (shipto !== undefined) {
-      updates.push('Shipto = @shipto');
-      request.input('shipto', shipto ?? '');
-    }
-    if (hq !== undefined) {
-      updates.push('HQ = @hq');
-      request.input('hq', hq);
-    }
-    if (ssacct !== undefined) {
-      updates.push('Ssacct = @ssacct');
-      request.input('ssacct', ssacct);
-    }
-
-    if (updates.length === 0) {
-      console.log('XX Original mapping update failed - No fields provided for RowNum:', rowNum);
-      return res.status(400).json({ error: 'No fields provided for update' });
-    }
-
-    request.input('rowNum', rowNum);
-
+    let conn;
     try {
+      conn = await getConnection();
+      const request = conn.request();
+
+      if (billto !== undefined) {
+        updates.push('Billto = @billto');
+        request.input('billto', billto);
+      }
+      if (shipto !== undefined) {
+        updates.push('Shipto = @shipto');
+        request.input('shipto', shipto ?? '');
+      }
+      if (hq !== undefined) {
+        updates.push('HQ = @hq');
+        request.input('hq', hq);
+      }
+      if (ssacct !== undefined) {
+        updates.push('Ssacct = @ssacct');
+        request.input('ssacct', ssacct);
+      }
+
+      if (updates.length === 0) {
+        console.log('XX Original mapping update failed - No fields provided for RowNum:', rowNum);
+        return res.status(400).json({ error: 'No fields provided for update' });
+      }
+
+      request.input('rowNum', rowNum);
+
       const result = await request.query(
         `UPDATE IPS.dbo.crossref_original SET ${updates.join(', ')} WHERE RowNum = @rowNum`
       );
@@ -120,6 +131,10 @@ router.put(
     } catch (err) {
       console.error('XX Error updating original mapping - RowNum:', rowNum, err);
       return res.status(500).json({ error: 'Failed to update original mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );
@@ -135,9 +150,10 @@ router.delete(
       return res.status(400).json({ error: 'Invalid row number' });
     }
 
+    let conn;
     try {
-      const pool = await getConnection();
-      const result = await pool.request()
+      conn = await getConnection();
+      const result = await conn.request()
         .input('rowNum', rowNum)
         .query(`DELETE FROM IPS.dbo.crossref_original WHERE RowNum = @rowNum`);
 
@@ -151,6 +167,10 @@ router.delete(
     } catch (err) {
       console.error('XX Error deleting original mapping - RowNum:', rowNum, err);
       return res.status(500).json({ error: 'Failed to delete original mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );
@@ -158,9 +178,10 @@ router.delete(
 // ============ IPS MAPPINGS (ips_mapping table) ============
 // GET /api/mappings/ips
 router.get('/ips', async (req: Request, res: Response) => {
+  let conn;
   try {
-    const pool = await getConnection();
-    const result = await pool.request().query(`
+    conn = await getConnection();
+    const result = await conn.request().query(`
       SELECT 
         i.rownum as rowNum,
         i.hq as hq,
@@ -176,6 +197,10 @@ router.get('/ips', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('XX Error fetching IPS mappings:', err);
     return res.status(500).json({ error: 'Failed to fetch IPS mappings' });
+  } finally {
+    if (conn) {
+      conn.close();
+    }
   }
 });
 
@@ -192,9 +217,10 @@ router.post(
       return res.status(400).json({ error: 'hq and ssacct are required' });
     }
 
+    let conn;
     try {
-      const pool = await getConnection();
-      const result = await pool.request()
+      conn = await getConnection();
+      const result = await conn.request()
         .input('hq', hq)
         .input('ssacct', ssacct)
         .query(`INSERT INTO IPS.dbo.ips_mapping (hq, ssacct) VALUES (@hq, @ssacct)`);
@@ -203,6 +229,10 @@ router.post(
     } catch (err) {
       console.error('XX Error creating IPS mapping:', err);
       return res.status(500).json({ error: 'Failed to create IPS mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );
@@ -222,26 +252,27 @@ router.put(
     const { hq, ssacct } = req.body;
 
     const updates: string[] = [];
-    const pool = await getConnection();
-    const request = pool.request();
-
-    if (hq !== undefined) {
-      updates.push('hq = @hq');
-      request.input('hq', hq);
-    }
-    if (ssacct !== undefined) {
-      updates.push('ssacct = @ssacct');
-      request.input('ssacct', ssacct);
-    }
-
-    if (updates.length === 0) {
-      console.log('XX IPS mapping update failed - No fields provided for RowNum:', rowNum);
-      return res.status(400).json({ error: 'No fields provided for update' });
-    }
-
-    request.input('rowNum', rowNum);
-
+    let conn;
     try {
+      conn = await getConnection();
+      const request = conn.request();
+
+      if (hq !== undefined) {
+        updates.push('hq = @hq');
+        request.input('hq', hq);
+      }
+      if (ssacct !== undefined) {
+        updates.push('ssacct = @ssacct');
+        request.input('ssacct', ssacct);
+      }
+
+      if (updates.length === 0) {
+        console.log('XX IPS mapping update failed - No fields provided for RowNum:', rowNum);
+        return res.status(400).json({ error: 'No fields provided for update' });
+      }
+
+      request.input('rowNum', rowNum);
+
       const result = await request.query(
         `UPDATE IPS.dbo.ips_mapping SET ${updates.join(', ')} WHERE rownum = @rowNum`
       );
@@ -256,6 +287,10 @@ router.put(
     } catch (err) {
       console.error('XX Error updating IPS mapping - RowNum:', rowNum, err);
       return res.status(500).json({ error: 'Failed to update IPS mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );
@@ -272,9 +307,10 @@ router.delete(
       return res.status(400).json({ error: 'Invalid row number' });
     }
 
+    let conn;
     try {
-      const pool = await getConnection();
-      const result = await pool.request()
+      conn = await getConnection();
+      const result = await conn.request()
         .input('rowNum', rowNum)
         .query(`DELETE FROM IPS.dbo.ips_mapping WHERE rownum = @rowNum`);
 
@@ -288,6 +324,10 @@ router.delete(
     } catch (err) {
       console.error('XX Error deleting IPS mapping - RowNum:', rowNum, err);
       return res.status(500).json({ error: 'Failed to delete IPS mapping' });
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 );

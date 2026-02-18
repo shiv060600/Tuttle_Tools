@@ -14,10 +14,11 @@ interface BackorderError {
 
 // /api/backorders/:isbn
 router.get('/:isbn', async (req: Request<{isbn: string}>, res: Response<BookBackorder | BackorderError>) => {
-    const conn = await getConnection();
+    let conn;
     const isbn = req.params.isbn;
 
     try {
+        conn = await getConnection();
 
         const result: IResult<BookBackorder> = await conn.request()
             .input('isbn', isbn)
@@ -41,7 +42,11 @@ router.get('/:isbn', async (req: Request<{isbn: string}>, res: Response<BookBack
                 error: 'Failed to fetch backorder details',
                 message: error.message
             });
-    }};
+    }}finally {
+        if (conn){
+            conn.close();
+        }
+    };
     
 
 });

@@ -102,3 +102,11 @@ export interface BookBackorder {
   ISBN: string,
   QTY_BACKORDERED: number
 }
+
+export interface INV_ADJ_CC_IPS {
+  WHS: string,
+  EAN: string,
+  TITLE: string,
+  QTY: number,
+  REASON_CODE: string,
+}

@@ -9,9 +9,10 @@ const router: Router = express.Router();
 // ============ ORIGINAL LOGGING (TuttleMappingLogger) ============
 // GET /api/logging/original
 router.get('/original', async(req: Request<{},{},{}>, res: Response) => {
+    let conn;
     try{
-         const pool = await getConnection();
-         const result = await pool.request().query(`
+         conn = await getConnection();
+         const result = await conn.request().query(`
             SELECT * FROM IPS.dbo.TuttleMappingLogger
          `);
 
@@ -20,15 +21,20 @@ router.get('/original', async(req: Request<{},{},{}>, res: Response) => {
         console.error(`error fetching original logs from db ${err}`);
         res.status(500).json({ error: 'Failed to fetch original logs' });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // ============ IPS LOGGING (MappingLoggerIPS) ============
 // GET /api/logging/ips
 router.get('/ips', async(req: Request<{},{},{}>, res: Response) => {
+    let conn;
     try{
-         const pool = await getConnection();
-         const result = await pool.request().query(`
+         conn = await getConnection();
+         const result = await conn.request().query(`
             SELECT * FROM IPS.dbo.MappingLoggerIPS
          `);
 
@@ -37,20 +43,25 @@ router.get('/ips', async(req: Request<{},{},{}>, res: Response) => {
         console.error(`error fetching IPS logs from db ${err}`);
         res.status(500).json({ error: 'Failed to fetch IPS logs' });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // DELETE /api/logging/original/id/:logId
 router.delete('/original/id/:logId', async (req: Request<{ logId: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
+    let conn;
     try {
-        const pool = await getConnection();
+        conn = await getConnection();
         const { logId } = req.params;
         if (!logId) {
             res.status(400).json({ deleted_count: 0 });
             return;
         }
 
-        const result = await pool.request()
+        const result = await conn.request()
             .input('logId', logId)
             .query(`DELETE FROM IPS.dbo.TuttleMappingLogger WHERE LOG_ID = @logId`);
 
@@ -60,20 +71,25 @@ router.delete('/original/id/:logId', async (req: Request<{ logId: string }, {}, 
         console.error(`error deleting original log by id ${err}`);
         res.status(500).json({ deleted_count: 0 });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // DELETE /api/logging/original/:days
 router.delete('/original/:days', async (req: Request<{ days: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
+    let conn;
     try {
-        const pool = await getConnection();
+        conn = await getConnection();
         const days = Number(req.params.days);
         if (Number.isNaN(days)) {
             res.status(400).json({ deleted_count: 0 });
             return;
         }
 
-        const result = await pool.request()
+        const result = await conn.request()
             .input('days', days)
             .query(`DELETE FROM IPS.dbo.TuttleMappingLogger WHERE DATEDIFF(day, ACTION_TIMESTAMP, GETDATE()) >= @days`);
 
@@ -83,20 +99,25 @@ router.delete('/original/:days', async (req: Request<{ days: string }, {}, {}>, 
         console.error(`error deleting original logs ${err}`);
         res.status(500).json({ deleted_count: 0 });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // DELETE /api/logging/ips/id/:logId
 router.delete('/ips/id/:logId', async (req: Request<{ logId: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
+    let conn;
     try {
-        const pool = await getConnection();
+        conn = await getConnection();
         const { logId } = req.params;
         if (!logId) {
             res.status(400).json({ deleted_count: 0 });
             return;
         }
 
-        const result = await pool.request()
+        const result = await conn.request()
             .input('logId', logId)
             .query(`DELETE FROM IPS.dbo.MappingLoggerIPS WHERE LOG_ID = @logId`);
 
@@ -106,20 +127,25 @@ router.delete('/ips/id/:logId', async (req: Request<{ logId: string }, {}, {}>, 
         console.error(`error deleting IPS log by id ${err}`);
         res.status(500).json({ deleted_count: 0 });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // DELETE /api/logging/ips/:days
 router.delete('/ips/:days', async (req: Request<{ days: string }, {}, {}>, res: Response<LogDeleteResponse>) => {
+    let conn;
     try {
-        const pool = await getConnection();
+        conn = await getConnection();
         const days = Number(req.params.days);
         if (Number.isNaN(days)) {
             res.status(400).json({ deleted_count: 0 });
             return;
         }
 
-        const result = await pool.request()
+        const result = await conn.request()
             .input('days', days)
             .query(`DELETE FROM IPS.dbo.MappingLoggerIPS WHERE DATEDIFF(day, ACTION_TIMESTAMP, GETDATE()) >= @days`);
 
@@ -129,14 +155,19 @@ router.delete('/ips/:days', async (req: Request<{ days: string }, {}, {}>, res: 
         console.error(`error deleting IPS logs ${err}`);
         res.status(500).json({ deleted_count: 0 });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // POST /api/logging/original
 router.post('/original', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) => {
+    let conn;
     try {
         console.log('XX Creating original log entry:', req.body.action);
-        const pool = await getConnection();
+        conn = await getConnection();
 
         switch (req.body.action) {
             case 'edit': {
@@ -146,7 +177,7 @@ router.post('/original', async (req: Request<{}, {}, CreateLoggingBody>, res: Re
                     return;
                 }
 
-                await pool.request()
+                await conn.request()
                     .input('billto_from', req.body.billto_from || '')
                     .input('shipto_from', req.body.shipto_from || '')
                     .input('hq_from', req.body.HQ_from || '')
@@ -177,7 +208,7 @@ router.post('/original', async (req: Request<{}, {}, CreateLoggingBody>, res: Re
                 return;
             }
             case 'insert': {
-                await pool.request()
+                await conn.request()
                     .input('billto_from', req.body.billto_from || '')
                     .input('shipto_from', req.body.shipto_from || '')
                     .input('hq_from', req.body.HQ_from || '')
@@ -208,7 +239,7 @@ router.post('/original', async (req: Request<{}, {}, CreateLoggingBody>, res: Re
                 return;
             }
             case 'delete': {
-                await pool.request()
+                await conn.request()
                     .input('billto_from', req.body.billto_from || '')
                     .input('shipto_from', req.body.shipto_from || '')
                     .input('hq_from', req.body.HQ_from || '')
@@ -247,14 +278,19 @@ router.post('/original', async (req: Request<{}, {}, CreateLoggingBody>, res: Re
         console.error('error posting original log to db', err);
         res.status(500).json({ error: 'Failed to post log' });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
 // POST /api/logging/ips
 router.post('/ips', async (req: Request<{}, {}, CreateLoggingBody>, res: Response) => {
+    let conn;
     try {
         console.log('XX Creating IPS log entry:', req.body.action);
-        const pool = await getConnection();
+        conn = await getConnection();
 
         switch (req.body.action) {
             case 'edit': {
@@ -264,7 +300,7 @@ router.post('/ips', async (req: Request<{}, {}, CreateLoggingBody>, res: Respons
                     return;
                 }
 
-                await pool.request()
+                await conn.request()
                     .input('hq_from', req.body.HQ_from || '')
                     .input('ssacct_from', req.body.Ssacct_from || '')
                     .input('hq_to', req.body.HQ_to || '')
@@ -287,7 +323,7 @@ router.post('/ips', async (req: Request<{}, {}, CreateLoggingBody>, res: Respons
                 return;
             }
             case 'insert': {
-                await pool.request()
+                await conn.request()
                     .input('hq_from', req.body.HQ_from || '')
                     .input('ssacct_from', req.body.Ssacct_from || '')
                     .input('hq_to', req.body.HQ_to || '')
@@ -310,7 +346,7 @@ router.post('/ips', async (req: Request<{}, {}, CreateLoggingBody>, res: Respons
                 return;
             }
             case 'delete': {
-                await pool.request()
+                await conn.request()
                     .input('hq_from', req.body.HQ_from || '')
                     .input('ssacct_from', req.body.Ssacct_from || '')
                     .input('hq_to', req.body.HQ_to || '')
@@ -341,6 +377,10 @@ router.post('/ips', async (req: Request<{}, {}, CreateLoggingBody>, res: Respons
         console.error('error posting IPS log to db', err);
         res.status(500).json({ error: 'Failed to post log' });
         return;
+    } finally {
+        if (conn) {
+            conn.close();
+        }
     }
 });
 
