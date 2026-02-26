@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
 
-// load env
 dotenv.config();
 
 // routes
@@ -34,7 +33,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://tutpub2.tuttlepub.com:3000',
   process.env.FRONTEND_URL
-].filter(Boolean); // Remove any undefined values
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {

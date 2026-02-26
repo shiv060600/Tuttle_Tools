@@ -11,14 +11,13 @@ interface ReportError {
     message?: string;
 }
 
-router.get("/:reportType", async(req: Request<{reportType: string}>, res: Response<IResult<INV_ADJ_CC_IPS> | ReportError | null>)=> {
+router.get("/:reportType", async(req: Request<{reportType: string}>, res: Response<INV_ADJ_CC_IPS[] | ReportError | null>)=> {
     let conn;
     
     const reportType = req.params.reportType;
 
     if (reportType === "INV_ADJ_CC_IPS"){
-        
-
+    
         try {
             conn = await getConnection();
             const result: IResult<INV_ADJ_CC_IPS> = await conn.request()
@@ -32,7 +31,7 @@ router.get("/:reportType", async(req: Request<{reportType: string}>, res: Respon
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = CAST(IPS.EAN AS Char(24))
                     WHERE WHS = 'IPS' and Acttype = 'CC'`
                 );
-            return res.status(200).json(result);
+            return res.status(200).json(result.recordset);
         } catch (error) {
             if (error instanceof Error) {
                 console.error('DB error in reports get route: ', error.message);

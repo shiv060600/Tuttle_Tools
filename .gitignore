@@ -15,3 +15,6 @@ nginx.conf
 tailwind.config.js
 vite-env.d.ts
 vite.config.ts
+restart-servers.bat
+start-servers.bat
+stop-servers.bat
