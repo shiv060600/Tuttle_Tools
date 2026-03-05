@@ -134,7 +134,33 @@ router.get("/:reportType", async(req: Request<{reportType: string}>, res: Respon
                     conn.close();
                 }
             }
-        
+            break;
+        case "INV_TI":
+            try {
+                conn = await getConnection();
+                const result: IResult<INV_ADJ_OH_ING> = await conn.request()
+                    .query(
+                        `
+                        SELECT
+                            IPS.WHS,
+                            CAST(IPS.EAN AS Char(24)) AS EAN,
+                            I.[DESC] as TITLE,
+                            IPS.Qty,
+                            IPS.Acttype
+                        From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
+                        WHERE IPS.Acctype = 'TI'
+                        `)
+                return res.status(200).json(result.recordset);
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error('DB error in reports get route: ', error.message);
+                }
+            } finally {
+                if (conn){
+                    conn.close();
+                }
+            }
+
         default:
             return res.status(400).json({
                 error: 'Invalid report type'

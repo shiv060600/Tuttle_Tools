@@ -110,3 +110,11 @@ export interface INV_ADJ_CC_IPS {
   QTY: number,
   REASON_CODE: string,
 }
+
+export interface INV_ADJ_OH_ING {
+  WHS: string,
+  EAN: string,
+  TITLE: string,
+  QTY: number,
+  REASON_CODE: string,
+}
