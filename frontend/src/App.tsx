@@ -11,6 +11,7 @@ import { LoginDialog } from './components/auth/LoginDialog';
 import HomePage from './pages/home/page';
 import CustomerMappingPage from './pages/customer-mapping/page';
 import BookPage from './pages/book-information/page';
+import DailyReportsPage from './pages/daily-files/page';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,6 +112,16 @@ export default function App() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <BookPage />
+                  </motion.div>
+                } />
+                <Route path="/daily-reports" element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <DailyReportsPage />
                   </motion.div>
                 } />
               </Routes>

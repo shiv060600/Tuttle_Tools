@@ -11,6 +11,7 @@ import loggingRoutes  from './routes/logger';
 import bookRoutes from './routes/books';
 import authRoutes from './routes/auth';
 import backorderRoutes from './routes/backorders';
+import reportsRoutes from './routes/reports';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3001', 10);
@@ -67,6 +68,7 @@ app.use('/api/mappings', mappingsRoutes);
 app.use('/api/logging', loggingRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/backorders', backorderRoutes);
+app.use('/api/reports', reportsRoutes);
 
 //error handlers are after routes in the order they should be accessed
 // 404 handler
@@ -101,11 +103,17 @@ app.listen(PORT, '0.0.0.0', (): void => {
   console.log(` Books: `);
   console.log(` GET /api/books/:bookId
     
-    `)
+    `);
   console.log(` Backorders: `);
   console.log(` GET /api/backorders/:isbn
     
-    `)
+    `);
+  console.log(` Reports: `);
+  console.log(` GET /api/reports/available       - Get available reports`);
+  console.log(` GET /api/reports/:reportType    - Get report data (INV_ADJ_CC_IPS, INV_ADJ_OH_ING, INV_TI, INV_ADJ_OH_IPS, INV_ADJ_CC_ING, INV_RR, ADJ_S_R)`);
+  console.log(` GET /api/reports/:reportType/excel - Download report as Excel
+    
+    `);
   console.log(`${'='.repeat(50)}\n`);
 });
 

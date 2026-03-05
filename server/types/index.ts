@@ -118,3 +118,26 @@ export interface INV_ADJ_OH_ING {
   QTY: number,
   REASON_CODE: string,
 }
+
+export interface INV_RR {
+  WHS: string,
+  ISBN: string,
+  TITLE: string,
+  QTY: number,
+  REASON_CODE: string,
+}
+
+export interface ADJ_S_R {
+  ISBN: string,
+  TITLE: string,
+  Ordnum: string,
+  Otype: string,
+  Ponumber: string,
+  Otypesra: string,
+  Billto: string,
+  Billtoname: string,
+  Qty: number,
+  Price: number,
+  Ext: number,
+  Discount: number,
+}
