@@ -44,7 +44,12 @@ router.get("/available", async (req:Request, res: Response<AvailableReportsRespo
         
         const availableReportNames = result.recordset;
 
-        availableReportNames.forEach((reportName: string) => {response[reportName as keyof AvailableReportsResponse] = true});
+        availableReportNames.forEach((row: any) => {
+            const reportName = row.ReportName;
+            if (reportName && response.hasOwnProperty(reportName)) {
+                response[reportName as keyof AvailableReportsResponse] = true;
+            }
+        });
 
         return res.status(200).json(response);
 
@@ -174,14 +179,19 @@ router.get("/:reportType", async(req: Request<{reportType: string}>, res: Respon
                             CAST(IPS.EAN AS Char(24)) AS EAN,
                             I.[DESC] as TITLE,
                             IPS.Qty,
-                            IPS.Acttype
+                            IPS.Acttype AS REASON_CODE
                         From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                         WHERE IPS.WHS = 'IPS' and IPS.Acttype IN('OH','KA','KW')
 
                         `)
+                return res.status(200).json(result.recordset);
             }catch (error) {
                 if (error instanceof Error) {
                     console.error('DB error in reports get route: ', error.message);
+                    return res.status(500).json({
+                        error: 'Failed to fetch report details',
+                        message: error.message
+                    });
                 }
             } finally {
                 if (conn){
@@ -262,10 +272,10 @@ router.get("/:reportType", async(req: Request<{reportType: string}>, res: Respon
                             Billtoname,
                             Qty,
                             Price,
-                            Ext,
+                            ROUND(Ext, 2) AS Ext,
                             Discount
                         FROM 
-                            IPS.dbo.IPS_DAILY itm
+                            IPS.dbo.ips_daily_pre_ips_queries itm
                         JOIN 
                             (SELECT ITEMNO, [DESC] TITLE FROM TUTLIV.dbo.ICITEM) ttl
                             ON itm.ISBN = ttl.ITEMNO

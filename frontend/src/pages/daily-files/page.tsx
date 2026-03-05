@@ -1,69 +1,58 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Download, RefreshCw, Clock } from 'lucide-react';
+import { FileText, Download, RefreshCw, Clock, Eye, FileDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { 
+  useAvailableReports, 
+  useReportData, 
+  downloadReportExcel, 
+  REPORT_LABELS,
+  ReportType 
+} from '../../hooks/useReports';
+import { viewPDF, downloadPDF } from '../../components/reports/ReportPDF';
 import { getNextReportRefreshTime, getMillisecondsUntilNextRefresh, getDailyCacheKey } from '../../utils/reportTiming';
 
-interface AvailableReports {
-  INV_ADJ_CC_ING: boolean;
-  INV_ADJ_CC_IPS: boolean;
-  INV_ADJ_OH_IPS: boolean;
-  INV_ADJ_OH_ING: boolean;
-  INV_RR: boolean;
-  INV_TI: boolean;
-  ADJ_S_R: boolean;
-}
-
-interface ReportData {
-  [key: string]: any[];
-}
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-const REPORT_LABELS: Record<keyof AvailableReports, string> = {
-  INV_ADJ_CC_ING: 'Inventory Adjustment CC (ING)',
-  INV_ADJ_CC_IPS: 'Inventory Adjustment CC (IPS)',
-  INV_ADJ_OH_IPS: 'Inventory Adjustment OH (IPS)',
-  INV_ADJ_OH_ING: 'Inventory Adjustment OH (ING)',
-  INV_RR: 'Inventory Returns (RR)',
-  INV_TI: 'Inventory TI',
-  ADJ_S_R: 'Sales/Returns Adjustments'
-};
-
 export default function DailyReportsPage() {
-  const [availableReports, setAvailableReports] = useState<AvailableReports | null>(null);
-  const [reportData, setReportData] = useState<ReportData>({});
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingReport, setLoadingReport] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [nextRefreshTime, setNextRefreshTime] = useState<Date>(getNextReportRefreshTime());
   const cacheKeyRef = useRef<string>(getDailyCacheKey());
   const refreshTimerRef = useRef<NodeJS.Timeout>();
+  const queryClient = useQueryClient();
+
+  // Fetch available reports
+  const { 
+    data: availableReports, 
+    isLoading: loadingAvailable,
+    refetch: refetchAvailable 
+  } = useAvailableReports();
+
+  // Fetch selected report data
+  const { 
+    data: reportData, 
+    isLoading: loadingReport 
+  } = useReportData(selectedReport, selectedReport !== null);
 
   useEffect(() => {
     // Check if we need to invalidate cache (new day after 7:50 AM)
     const currentCacheKey = getDailyCacheKey();
     if (currentCacheKey !== cacheKeyRef.current) {
       cacheKeyRef.current = currentCacheKey;
-      setReportData({});
       setSelectedReport(null);
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.info('New daily reports available! Data has been refreshed.');
     }
-
-    // Load available reports on mount or when cache key changes
-    fetchAvailableReports();
 
     // Set up timer to auto-refresh at next 7:50 AM EST
     const msUntilRefresh = getMillisecondsUntilNextRefresh();
     refreshTimerRef.current = setTimeout(() => {
       const newCacheKey = getDailyCacheKey();
       cacheKeyRef.current = newCacheKey;
-      setReportData({});
       setSelectedReport(null);
       setNextRefreshTime(getNextReportRefreshTime());
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Daily reports refreshed at 7:50 AM EST!');
-      fetchAvailableReports();
     }, msUntilRefresh);
 
     return () => {
@@ -71,120 +60,70 @@ export default function DailyReportsPage() {
         clearTimeout(refreshTimerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [queryClient]);
 
-  const fetchAvailableReports = async () => {
-    setLoading(true);
+  const handleDownloadExcel = async (reportType: ReportType) => {
     try {
-      // Check localStorage cache first (keyed by daily cache key)
-      const cacheKey = `reports_available_${getDailyCacheKey()}`;
-      const cached = localStorage.getItem(cacheKey);
-      
-      if (cached) {
-        setAvailableReports(JSON.parse(cached));
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/reports/available`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch available reports');
-      }
-      
-      const data = await response.json();
-      setAvailableReports(data);
-      
-      // Cache until next 7:50 AM EST
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (error) {
-      console.error('Error fetching available reports:', error);
-      toast.error('Failed to fetch available reports');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchReportData = async (reportType: string) => {
-    // Check if already loaded today
-    if (reportData[reportType]) {
-      setSelectedReport(reportType);
-      return;
-    }
-
-    setLoadingReport(reportType);
-    try {
-      // Check localStorage cache first (keyed by daily cache key)
-      const cacheKey = `report_data_${reportType}_${getDailyCacheKey()}`;
-      const cached = localStorage.getItem(cacheKey);
-      
-      if (cached) {
-        const data = JSON.parse(cached);
-        setReportData(prev => ({ ...prev, [reportType]: data }));
-        setSelectedReport(reportType);
-        setLoadingReport(null);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/reports/${reportType}`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ${reportType} data`);
-      }
-      
-      const data = await response.json();
-      setReportData(prev => ({ ...prev, [reportType]: data }));
-      setSelectedReport(reportType);
-      
-      // Cache until next 7:50 AM EST
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      
-      toast.success(`Loaded ${REPORT_LABELS[reportType as keyof AvailableReports]}`);
-    } catch (error) {
-      console.error(`Error fetching ${reportType}:`, error);
-      toast.error(`Failed to load ${reportType}`);
-    } finally {
-      setLoadingReport(null);
-    }
-  };
-
-  const downloadExcel = async (reportType: string) => {
-    try {
-      toast.info(`Downloading ${REPORT_LABELS[reportType as keyof AvailableReports]}...`);
-      
-      const response = await fetch(`${API_BASE_URL}/api/reports/${reportType}/excel`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to download ${reportType}`);
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${reportType}_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success(`Downloaded ${REPORT_LABELS[reportType as keyof AvailableReports]}`);
+      toast.info(`Downloading ${reportType} Excel...`);
+      await downloadReportExcel(reportType);
+      toast.success(`Downloaded ${reportType}`);
     } catch (error) {
       console.error(`Error downloading ${reportType}:`, error);
       toast.error(`Failed to download ${reportType}`);
     }
   };
 
-  const renderTableData = (reportType: string) => {
-    const data = reportData[reportType];
-    if (!data || data.length === 0) {
+  const handleViewPDF = async (reportType: ReportType) => {
+    try {
+      const data = await queryClient.fetchQuery({
+        queryKey: ['reports', reportType, getDailyCacheKey()],
+        queryFn: async () => {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/reports/${reportType}`, {
+            credentials: 'include'
+          });
+          if (!response.ok) throw new Error('Failed to fetch report');
+          return response.json();
+        }
+      });
+      
+      toast.info(`Opening ${reportType} PDF...`);
+      await viewPDF(reportType, data);
+    } catch (error) {
+      console.error(`Error viewing PDF:`, error);
+      toast.error(`Failed to open ${reportType} PDF`);
+    }
+  };
+
+  const handleDownloadPDF = async (reportType: ReportType) => {
+    try {
+      const data = await queryClient.fetchQuery({
+        queryKey: ['reports', reportType, getDailyCacheKey()],
+        queryFn: async () => {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/reports/${reportType}`, {
+            credentials: 'include'
+          });
+          if (!response.ok) throw new Error('Failed to fetch report');
+          return response.json();
+        }
+      });
+      
+      toast.info(`Downloading ${reportType} PDF...`);
+      await downloadPDF(reportType, data);
+      toast.success(`Downloaded ${reportType} PDF`);
+    } catch (error) {
+      console.error(`Error downloading PDF:`, error);
+      toast.error(`Failed to download ${reportType} PDF`);
+    }
+  };
+
+  const handleForceRefresh = () => {
+    setSelectedReport(null);
+    queryClient.invalidateQueries({ queryKey: ['reports'] });
+    refetchAvailable();
+  };
+
+  const renderTableData = () => {
+    if (!reportData || reportData.length === 0) {
       return (
         <div className="text-center py-8 text-gray-500">
           No data available for this report
@@ -192,7 +131,7 @@ export default function DailyReportsPage() {
       );
     }
 
-    const columns = Object.keys(data[0]);
+    const columns = Object.keys(reportData[0]);
 
     return (
       <div className="overflow-x-auto">
@@ -210,7 +149,7 @@ export default function DailyReportsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row, idx) => (
+            {reportData.map((row, idx) => (
               <tr key={idx} className="hover:bg-gray-50">
                 {columns.map((col) => (
                   <td key={col} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -226,7 +165,7 @@ export default function DailyReportsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Daily Reports</h1>
@@ -243,71 +182,85 @@ export default function DailyReportsPage() {
           </p>
         </div>
         <Button
-          onClick={() => {
-            // Clear cache and force refresh
-            const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-              if (key.startsWith('reports_') || key.startsWith('report_data_')) {
-                localStorage.removeItem(key);
-              }
-            });
-            setReportData({});
-            setSelectedReport(null);
-            fetchAvailableReports();
-          }}
-          disabled={loading}
+          onClick={handleForceRefresh}
+          disabled={loadingAvailable}
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`size-4 ${loadingAvailable ? 'animate-spin' : ''}`} />
           Force Refresh
         </Button>
       </div>
 
       {/* Available Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {availableReports &&
           Object.entries(availableReports).map(([reportType, isAvailable]) => (
             <Card
               key={reportType}
-              className={`${
+              className={`transition-all duration-200 hover:shadow-lg ${
                 isAvailable
-                  ? 'border-green-300 bg-green-50/50'
-                  : 'border-gray-200 bg-gray-50/50 opacity-60'
+                  ? 'border-blue-200 bg-white shadow-md'
+                  : 'border-gray-200 bg-gray-50 opacity-50'
               }`}
             >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="size-5" />
-                  {REPORT_LABELS[reportType as keyof AvailableReports]}
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base font-mono">
+                  <FileText className={`size-5 ${isAvailable ? 'text-blue-600' : 'text-gray-400'}`} />
+                  {REPORT_LABELS[reportType as ReportType]}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs">
                   {isAvailable ? (
-                    <span className="text-green-600 font-medium">Available</span>
+                    <span className="text-blue-600 font-semibold">● Available</span>
                   ) : (
-                    <span className="text-gray-500">Not available</span>
+                    <span className="text-gray-400">● Not available</span>
                   )}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-4 px-4 pb-5">
                 <Button
-                  onClick={() => fetchReportData(reportType)}
-                  disabled={!isAvailable || loadingReport === reportType}
-                  className="w-full"
+                  onClick={() => setSelectedReport(reportType as ReportType)}
+                  disabled={!isAvailable || (loadingReport && selectedReport === reportType)}
+                  className="w-full h-11"
                   variant={selectedReport === reportType ? 'default' : 'outline'}
                 >
-                  {loadingReport === reportType ? (
+                  {loadingReport && selectedReport === reportType ? (
                     <>
                       <RefreshCw className="size-4 mr-2 animate-spin" />
                       Loading...
                     </>
                   ) : (
-                    'View Report'
+                    <>
+                      <FileText className="size-4 mr-2" />
+                      View Data
+                    </>
                   )}
                 </Button>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => handleViewPDF(reportType as ReportType)}
+                    disabled={!isAvailable}
+                    className="w-full h-10"
+                    variant="outline"
+                  >
+                    <Eye className="size-4 mr-1.5" />
+                    View
+                  </Button>
+                  <Button
+                    onClick={() => handleDownloadPDF(reportType as ReportType)}
+                    disabled={!isAvailable}
+                    className="w-full h-10"
+                    variant="outline"
+                  >
+                    <FileDown className="size-4 mr-1.5" />
+                    Save
+                  </Button>
+                </div>
+                
                 <Button
-                  onClick={() => downloadExcel(reportType)}
+                  onClick={() => handleDownloadExcel(reportType as ReportType)}
                   disabled={!isAvailable}
-                  className="w-full"
+                  className="w-full h-11"
                   variant="outline"
                 >
                   <Download className="size-4 mr-2" />
@@ -319,18 +272,30 @@ export default function DailyReportsPage() {
       </div>
 
       {/* Report Display */}
-      {selectedReport && reportData[selectedReport] && (
+      {selectedReport && reportData && (
         <Card>
           <CardHeader>
-            <CardTitle>
-              {REPORT_LABELS[selectedReport as keyof AvailableReports]}
+            <CardTitle className="font-mono">
+              {REPORT_LABELS[selectedReport]}
             </CardTitle>
             <CardDescription>
-              Showing {reportData[selectedReport].length} records
+              Showing {reportData.length} records
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {renderTableData(selectedReport)}
+            {renderTableData()}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {loadingReport && selectedReport && (
+        <Card>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <RefreshCw className="size-8 animate-spin text-blue-600" />
+              <p className="text-gray-600">Loading {REPORT_LABELS[selectedReport]}...</p>
+            </div>
           </CardContent>
         </Card>
       )}
