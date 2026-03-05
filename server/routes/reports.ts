@@ -425,7 +425,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         Ext,
                         Discount
                     FROM 
-                        IPS.dbo.IPS_DAILY itm
+                        IPS.dbo.ips_daily_pre_ips_queries itm
                     JOIN 
                         (SELECT ITEMNO, [DESC] TITLE FROM TUTLIV.dbo.ICITEM) ttl
                         ON itm.ISBN = ttl.ITEMNO
