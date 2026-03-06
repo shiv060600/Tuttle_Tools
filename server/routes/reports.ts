@@ -323,8 +323,14 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
         
         switch(reportType) {
             case "INV_ADJ_CC_IPS":
+                columns = ['WHS', 'EAN', 'TITLE', 'QTY', 'REASON_CODE'];
+                break;
             case "INV_ADJ_OH_ING":
+                columns = ['WHS', 'EAN', 'TITLE', 'QTY', 'REASON_CODE'];
+                break;
             case "INV_ADJ_OH_IPS":
+                columns = ['WHS', 'EAN', 'TITLE', 'QTY', 'REASON_CODE'];
+                break;
             case "INV_ADJ_CC_ING":
                 columns = ['WHS', 'EAN', 'TITLE', 'QTY', 'REASON_CODE'];
                 break;
@@ -332,7 +338,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                 columns = ['WHS', 'ISBN', 'TITLE', 'QTY', 'REASON_CODE'];
                 break;
             case "ADJ_S_R":
-                columns = ['ISBN', 'TITLE', 'Ordnum', 'Otype', 'Ponumber', 'Otypesra', 'Billto', 'Billtoname', 'Qty', 'Price', 'Ext', 'Discount'];
+                columns = ['ISBN', 'TITLE', 'Ordnum', 'Otype', 'Ponumber', 'Otypesra', 'Billto', 'Billtoname', 'QTY', 'Price', 'Ext', 'Discount'];
                 break;
             case "INV_TI":
                 columns = ['WHS', 'EAN', 'TITLE', 'QTY', 'ACTTYPE'];
@@ -349,7 +355,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         CAST(IPS.EAN AS Char(24)) AS EAN,
                         I.[DESC] as TITLE,
                         IPS.WHS,
-                        IPS.Qty,
+                        IPS.Qty AS QTY,
                         IPS.Acttype AS REASON_CODE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE WHS = 'IPS' and Acttype = 'CC'`);
@@ -360,7 +366,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         IPS.WHS,
                         CAST(IPS.EAN AS Char(24)) AS EAN,
                         I.[DESC] as TITLE,
-                        IPS.Qty,
+                        IPS.Qty AS QTY,
                         IPS.Acttype AS REASON_CODE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE IPS.WHS = 'ING' and IPS.Acttype IN('OH','KA','KW')`);
@@ -371,8 +377,8 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         IPS.WHS,
                         CAST(IPS.EAN AS Char(24)) AS EAN,
                         I.[DESC] as TITLE,
-                        IPS.Qty,
-                        IPS.Acttype
+                        IPS.Qty AS QTY,
+                        IPS.Acttype AS ACTTYPE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE IPS.Acttype = 'TI'`);
                 break;
@@ -382,7 +388,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         IPS.WHS,
                         CAST(IPS.EAN AS Char(24)) AS EAN,
                         I.[DESC] as TITLE,
-                        IPS.Qty,
+                        IPS.Qty AS QTY,
                         IPS.Acttype AS REASON_CODE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE IPS.WHS = 'IPS' and IPS.Acttype IN('OH','KA','KW')`);
@@ -393,7 +399,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         IPS.WHS,
                         CAST(IPS.EAN AS Char(24)) AS EAN,
                         I.[DESC] as TITLE,
-                        IPS.Qty,
+                        IPS.Qty AS QTY,
                         IPS.Acttype AS REASON_CODE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE IPS.WHS = 'ING' and IPS.Acttype = 'CC'`);
@@ -404,7 +410,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         IPS.WHS,
                         CAST(IPS.EAN AS Char(24)) AS ISBN,
                         I.[DESC] as TITLE,
-                        IPS.Qty,
+                        IPS.Qty AS QTY,
                         IPS.Acttype AS REASON_CODE
                     From IPS.dbo.IPS_INV as IPS LEFT JOIN TUTLIV.dbo.ICITEM I ON TRIM(I.ITEMNO) = TRIM(CAST(IPS.EAN AS Char(24)))
                     WHERE IPS.Acttype = 'RR'`);
@@ -420,7 +426,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
                         Otypesra,
                         Billto,
                         Billtoname,
-                        Qty,
+                        Qty AS QTY,
                         Price,
                         Ext,
                         Discount
@@ -448,14 +454,7 @@ router.get("/:reportType/excel", async(req: Request<{reportType: string}>, res: 
             key: col,
             width: 20
         }));
-        
-        // Style the header row
-        worksheet.getRow(1).font = { bold: true };
-        worksheet.getRow(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFD9D9D9' }
-        };
+    
         
         // Add data rows
         result.recordset.forEach(record => {
